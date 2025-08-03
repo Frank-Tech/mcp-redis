@@ -4,6 +4,22 @@
 [![smithery badge](https://smithery.ai/badge/@redis/mcp-redis)](https://smithery.ai/server/@redis/mcp-redis)
 [![Verified on MseeP](https://mseep.ai/badge.svg)](https://mseep.ai/app/70102150-efe0-4705-9f7d-87980109a279)
 
+## 🔧 Modifications in This Fork
+
+This fork of the [Redis MCP Server](https://github.com/redis/mcp-redis) adds enhanced Redis list and string operations.
+
+**New/Modified Tools:**
+
+### 🔹 List Tools
+- Extended `lpush` and `rpush` to accept lists of values.
+- Introduced support for serialized dict values in list operations.
+
+### 🔹 String Tools
+- Added `incr`, `decr`, `incrbyfloat`, and `decrbyfloat` commands.
+
+All original documentation below is retained for context and usability.
+
+
 ## Overview
 The Redis MCP Server is a **natural language interface** designed for agentic applications to efficiently manage and search data in Redis. It integrates seamlessly with **MCP (Model Content Protocol) clients**, enabling AI-driven workflows to interact with structured and unstructured data in Redis. Using this MCP Server, you can ask questions like:
 
