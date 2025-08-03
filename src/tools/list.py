@@ -1,22 +1,30 @@
 import json
-from src.common.connection import RedisConnectionManager
-from redis.exceptions import RedisError
-from src.common.server import mcp
-from redis.typing import FieldT
-
 from typing import Union, List
 
+from redis import RedisError
+
+from src.common.connection import RedisConnectionManager
+from src.common.helpers import serialize_value
+from src.common.server import mcp
+from src.common.typing import RedisSerializableValue
+
+
 @mcp.tool()
-async def lpush(name: str, value: Union[FieldT, List[FieldT]], expire: int = None) -> str:
+async def lpush(
+        name: str,
+        value: Union[RedisSerializableValue, List[RedisSerializableValue]],
+        expire: int = None
+) -> str:
     """
     Push one or more values onto the left of a Redis list and optionally set an expiration time.
     """
     try:
         r = RedisConnectionManager.get_connection()
         if isinstance(value, list):
-            r.lpush(name, *value)
+            serialized = [serialize_value(v) for v in value]
+            r.lpush(name, *serialized)
         else:
-            r.lpush(name, value)
+            r.lpush(name, serialize_value(value))
         if expire:
             r.expire(name, expire)
         return f"Value(s) '{value}' pushed to the left of list '{name}'."
@@ -24,16 +32,20 @@ async def lpush(name: str, value: Union[FieldT, List[FieldT]], expire: int = Non
         return f"Error pushing value(s) to list '{name}': {str(e)}"
 
 @mcp.tool()
-async def rpush(name: str, value: Union[FieldT, List[FieldT]], expire: int = None) -> str:
+async def rpush(
+        name: str,
+        value: Union[RedisSerializableValue, List[RedisSerializableValue]],
+        expire: int = None) -> str:
     """
     Push one or more values onto the right of a Redis list and optionally set an expiration time.
     """
     try:
         r = RedisConnectionManager.get_connection()
         if isinstance(value, list):
-            r.rpush(name, *value)
+            serialized = [serialize_value(v) for v in value]
+            r.rpush(name, *serialized)
         else:
-            r.rpush(name, value)
+            r.rpush(name, serialize_value(value))
         if expire:
             r.expire(name, expire)
         return f"Value(s) '{value}' pushed to the right of list '{name}'."
