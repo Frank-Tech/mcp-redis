@@ -31,7 +31,6 @@ async def lpush(
     except RedisError as e:
         return f"Error pushing value(s) to list '{name}': {str(e)}"
 
-
 @mcp.tool()
 async def rpush(
         name: str,
@@ -53,7 +52,6 @@ async def rpush(
     except RedisError as e:
         return f"Error pushing value(s) to list '{name}': {str(e)}"
 
-
 @mcp.tool()
 async def lpop(name: str) -> str:
     """Remove and return the first element from a Redis list."""
@@ -64,7 +62,6 @@ async def lpop(name: str) -> str:
     except RedisError as e:
         return f"Error popping value from list '{name}': {str(e)}"
 
-
 @mcp.tool()
 async def rpop(name: str) -> str:
     """Remove and return the last element from a Redis list."""
@@ -74,7 +71,6 @@ async def rpop(name: str) -> str:
         return value if value else f"List '{name}' is empty or does not exist."
     except RedisError as e:
         return f"Error popping value from list '{name}': {str(e)}"
-
 
 @mcp.tool()
 async def lrange(name: str, start: int, stop: int) -> list:
@@ -92,7 +88,6 @@ async def lrange(name: str, start: int, stop: int) -> list:
             return json.dumps(values)
     except RedisError as e:
         return f"Error retrieving values from list '{name}': {str(e)}"
-
 
 @mcp.tool()
 async def llen(name: str) -> int:
