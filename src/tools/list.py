@@ -1,18 +1,18 @@
 import json
-from typing import Union, List
+from typing import Union, List, Dict, Any
 
 from redis import RedisError
+from redis.typing import FieldT
 
 from src.common.connection import RedisConnectionManager
 from src.common.helpers import serialize_value
 from src.common.server import mcp
-from src.common.typing import RedisSerializableValue
 
 
 @mcp.tool()
 async def lpush(
         name: str,
-        value: Union[RedisSerializableValue, List[RedisSerializableValue]],
+        value: Union[Union[FieldT, Dict[str, Any]], List[Union[FieldT, Dict[str, Any]]]],
         expire: int = None
 ) -> str:
     """
@@ -31,10 +31,11 @@ async def lpush(
     except RedisError as e:
         return f"Error pushing value(s) to list '{name}': {str(e)}"
 
+
 @mcp.tool()
 async def rpush(
         name: str,
-        value: Union[RedisSerializableValue, List[RedisSerializableValue]],
+        value: Union[Union[FieldT, Dict[str, Any]], List[Union[FieldT, Dict[str, Any]]]],
         expire: int = None) -> str:
     """
     Push one or more values onto the right of a Redis list and optionally set an expiration time.
@@ -52,6 +53,7 @@ async def rpush(
     except RedisError as e:
         return f"Error pushing value(s) to list '{name}': {str(e)}"
 
+
 @mcp.tool()
 async def lpop(name: str) -> str:
     """Remove and return the first element from a Redis list."""
@@ -62,6 +64,7 @@ async def lpop(name: str) -> str:
     except RedisError as e:
         return f"Error popping value from list '{name}': {str(e)}"
 
+
 @mcp.tool()
 async def rpop(name: str) -> str:
     """Remove and return the last element from a Redis list."""
@@ -71,6 +74,7 @@ async def rpop(name: str) -> str:
         return value if value else f"List '{name}' is empty or does not exist."
     except RedisError as e:
         return f"Error popping value from list '{name}': {str(e)}"
+
 
 @mcp.tool()
 async def lrange(name: str, start: int, stop: int) -> list:
@@ -88,6 +92,7 @@ async def lrange(name: str, start: int, stop: int) -> list:
             return json.dumps(values)
     except RedisError as e:
         return f"Error retrieving values from list '{name}': {str(e)}"
+
 
 @mcp.tool()
 async def llen(name: str) -> int:
