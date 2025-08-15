@@ -1,4 +1,6 @@
+import logging
 import sys
+from argparse import ArgumentTypeError
 
 import click
 
@@ -7,14 +9,28 @@ from src.common.server import mcp
 
 
 class RedisMCPServer:
-    def __init__(self):
+    def __init__(self, transport="stdio", host="127.0.0.1", port=8000):
         print("Starting the Redis MCP Server", file=sys.stderr)
+        self.transport = transport
+        self.host = host
+        self.port = port
 
     def run(self):
-        mcp.run()
+        try:
+            if self.transport == "stdio":
+                mcp.run(transport=self.transport)
+            else:
+                mcp.settings.host = self.host
+                mcp.settings.port = self.port
+                mcp.run(transport=self.transport)
+        except KeyboardInterrupt as e:
+            logging.info("KeyboardInterrupt")
 
 
 @click.command()
+@click.option("--transport", default="stdio", help="Transport mechanism for the MCP server. Defaults to 'http'.")
+@click.option("--mcp-host", default="127.0.0.1", help="MCP host")
+@click.option("--mcp-port", default=8000, type=int, help="MCP port")
 @click.option(
     "--url",
     help="Redis connection URI (redis://user:pass@host:port/db or rediss:// for SSL)",
@@ -34,6 +50,9 @@ class RedisMCPServer:
 @click.option("--ssl-ca-certs", help="Path to CA certificates file")
 @click.option("--cluster-mode", is_flag=True, help="Enable Redis cluster mode")
 def cli(
+    transport,
+    mcp_host,
+    mcp_port,
     url,
     host,
     port,
@@ -49,6 +68,9 @@ def cli(
     cluster_mode,
 ):
     """Redis MCP Server - Model Context Protocol server for Redis."""
+    if transport == "stdio":
+        if mcp_host != "127.0.0.1" or mcp_port != 8000:
+            raise ArgumentTypeError("Host and port should not be set when using 'stdio' transport.")
 
     # Handle Redis URI if provided
     if url:
@@ -86,7 +108,7 @@ def cli(
         set_redis_config_from_cli(config)
 
     # Start the server
-    server = RedisMCPServer()
+    server = RedisMCPServer(transport=transport, host=mcp_host, port=mcp_port)
     server.run()
 
 

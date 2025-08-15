@@ -7,6 +7,18 @@ startCommand:
     type: object
     required: []
     properties:
+      transport:
+        type: string
+        default: stdio
+        description: MCP Transport
+      mcpHost:
+        type: string
+        default: 127.0.0.1
+        description: MCP IP or hostname
+      mcpPort:
+        type: number
+        default: 8000
+        description: MCP port
       redisHost:
         type: string
         default: 127.0.0.1
@@ -54,6 +66,9 @@ startCommand:
       command: 'uv',
       args: ['run', 'python', 'src/main.py'],
       env: {
+        TRANSPORT: config.transport,
+        MCP_HOST: config.mcpHost,
+        MCP_PORT: String(config.mcpPort),
         REDIS_HOST: config.redisHost,
         REDIS_PORT: String(config.redisPort),
         REDIS_USERNAME: config.redisUsername,
@@ -67,6 +82,9 @@ startCommand:
       }
     })
   exampleConfig:
+    transport: stdio
+    mcpHost: 127.0.0.1
+    mcpPort: 8000
     redisHost: 127.0.0.1
     redisPort: 6379
     redisUsername: default

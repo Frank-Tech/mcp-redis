@@ -6,6 +6,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 REDIS_CFG = {
+    "transport": os.getenv("TRANSPORT", "http"),
+    "mcp_host": os.getenv("MCP_HOST", "127.0.0.1"),
+    "mcp_port": int(os.getenv("MCP_PORT", 8000)),
     "host": os.getenv("REDIS_HOST", "127.0.0.1"),
     "port": int(os.getenv("REDIS_PORT", 6379)),
     "username": os.getenv("REDIS_USERNAME", None),

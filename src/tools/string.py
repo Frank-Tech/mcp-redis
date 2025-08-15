@@ -71,3 +71,78 @@ async def get(key: str) -> Union[str, bytes]:
         return value
     except RedisError as e:
         return f"Error retrieving key {key}: {str(e)}"
+
+
+@mcp.tool()
+async def incr(key: str) -> str:
+    """Increment the integer value of a key by one.
+
+    Args:
+        key (str): The key to increment.
+
+    Returns:
+        str: The new value after incrementing or an error message.
+    """
+    try:
+        r = RedisConnectionManager.get_connection()
+        new_value = r.incr(key)
+        return f"Key {key} incremented to {new_value}"
+    except RedisError as e:
+        return f"Error incrementing key {key}: {str(e)}"
+
+
+@mcp.tool()
+async def decr(key: str) -> str:
+    """Decrement the integer value of a key by one.
+
+    Args:
+        key (str): The key to decrement.
+
+    Returns:
+        str: The new value after decrementing or an error message.
+    """
+    try:
+        r = RedisConnectionManager.get_connection()
+        new_value = r.decr(key)
+        return f"Key {key} decremented to {new_value}"
+    except RedisError as e:
+        return f"Error decrementing key {key}: {str(e)}"
+
+
+@mcp.tool()
+async def incrbyfloat(key: str, amount: float) -> str:
+    """Increment the float value of a key by the given amount.
+
+    Args:
+        key (str): The key to increment.
+        amount (float): The amount to increment by.
+
+    Returns:
+        str: The new value after incrementing or an error message.
+    """
+    try:
+        r = RedisConnectionManager.get_connection()
+        new_value = r.incrbyfloat(key, amount)
+        return f"Key {key} incremented by {amount}, new value: {new_value}"
+    except RedisError as e:
+        return f"Error incrementing key {key} by float: {str(e)}"
+
+
+@mcp.tool()
+async def decrbyfloat(key: str, amount: float) -> str:
+    """Decrement the float value of a key by the given amount.
+
+    Args:
+        key (str): The key to decrement.
+        amount (float): The amount to decrement by.
+
+    Returns:
+        str: The new value after decrementing or an error message.
+    """
+    try:
+        r = RedisConnectionManager.get_connection()
+        new_value = r.incrbyfloat(key, -amount)
+        return f"Key {key} decremented by {amount}, new value: {new_value}"
+    except RedisError as e:
+        return f"Error decrementing key {key} by float: {str(e)}"
+

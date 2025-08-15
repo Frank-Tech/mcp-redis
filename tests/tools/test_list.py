@@ -20,7 +20,7 @@ class TestListOperations:
         result = await lpush("test_list", "value1")
 
         mock_redis.lpush.assert_called_once_with("test_list", "value1")
-        assert "Value 'value1' pushed to the left of list 'test_list'" in result
+        assert "Value(s) 'value1' pushed to the left of list 'test_list'" in result
 
     @pytest.mark.asyncio
     async def test_lpush_with_expiration(self, mock_redis_connection_manager):
@@ -34,7 +34,7 @@ class TestListOperations:
         mock_redis.lpush.assert_called_once_with("test_list", "value1")
         mock_redis.expire.assert_called_once_with("test_list", 60)
         # The implementation doesn't include expiration info in the message
-        assert "Value 'value1' pushed to the left of list 'test_list'" in result
+        assert "Value(s) 'value1' pushed to the left of list 'test_list'" in result
 
     @pytest.mark.asyncio
     async def test_lpush_redis_error(self, mock_redis_connection_manager):
@@ -44,7 +44,7 @@ class TestListOperations:
 
         result = await lpush("test_list", "value1")
 
-        assert "Error pushing value to list 'test_list': Connection failed" in result
+        assert "Error pushing value(s) to list 'test_list': Connection failed" in result
 
     @pytest.mark.asyncio
     async def test_rpush_success(self, mock_redis_connection_manager):
@@ -55,7 +55,7 @@ class TestListOperations:
         result = await rpush("test_list", "value2")
 
         mock_redis.rpush.assert_called_once_with("test_list", "value2")
-        assert "Value 'value2' pushed to the right of list 'test_list'" in result
+        assert "Value(s) 'value2' pushed to the right of list 'test_list'" in result
 
     @pytest.mark.asyncio
     async def test_rpush_with_expiration(self, mock_redis_connection_manager):
@@ -69,7 +69,7 @@ class TestListOperations:
         mock_redis.rpush.assert_called_once_with("test_list", "value2")
         mock_redis.expire.assert_called_once_with("test_list", 120)
         # The implementation doesn't include expiration info in the message
-        assert "Value 'value2' pushed to the right of list 'test_list'" in result
+        assert "Value(s) 'value2' pushed to the right of list 'test_list'" in result
 
     @pytest.mark.asyncio
     async def test_rpush_redis_error(self, mock_redis_connection_manager):
@@ -79,7 +79,7 @@ class TestListOperations:
 
         result = await rpush("test_list", "value2")
 
-        assert "Error pushing value to list 'test_list': Connection failed" in result
+        assert "Error pushing value(s) to list 'test_list': Connection failed" in result
 
     @pytest.mark.asyncio
     async def test_lpop_success(self, mock_redis_connection_manager):
@@ -261,7 +261,7 @@ class TestListOperations:
         result = await lpush("test_list", "value", 60)
 
         # Should report the expire error
-        assert "Error pushing value to list 'test_list': Expire failed" in result
+        assert "Error pushing value(s) to list 'test_list': Expire failed" in result
 
     @pytest.mark.asyncio
     async def test_push_operations_return_new_length(

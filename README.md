@@ -13,6 +13,25 @@
 [![Twitter](https://img.shields.io/twitter/follow/redisinc?style=social)](https://twitter.com/redisinc)
 [![Stack Exchange questions](https://img.shields.io/stackexchange/stackoverflow/t/mcp-redis?style=social&logo=stackoverflow&label=Stackoverflow)](https://stackoverflow.com/questions/tagged/mcp-redis)
 
+## 🔧 Modifications in This Fork
+
+This fork of the [Redis MCP Server](https://github.com/redis/mcp-redis) adds enhanced Redis list and string operations.
+
+**New/Modified Tools:**
+
+### 🔹 List Tools
+- Extended `lpush` and `rpush` to accept lists of values.
+- Introduced support for serialized dict values in list operations.
+
+### 🔹 String Tools
+- Added `incr`, `decr`, `incrbyfloat`, and `decrbyfloat` commands.
+
+### 🔹 Transport
+- Added `SSE`, `Streamable-http` transport support.
+
+All original documentation below is retained for context and usability.
+
+
 ## Overview
 The Redis MCP Server is a **natural language interface** designed for agentic applications to efficiently manage and search data in Redis. It integrates seamlessly with **MCP (Model Content Protocol) clients**, enabling AI-driven workflows to interact with structured and unstructured data in Redis. Using this MCP Server, you can ask questions like:
 
