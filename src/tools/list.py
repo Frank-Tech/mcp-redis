@@ -10,7 +10,7 @@ from src.common.server import mcp
 @mcp.tool()
 async def lpush(
         name: str,
-        value: Union[Union[str, bytes, int, float, dict], List[Union[str, bytes, int, float, dict]]],
+        value: Union[str, bytes, int, float, dict, List[Union[str, bytes, int, float, dict]]],
         expire: int = None
 ) -> str:
     """
@@ -19,8 +19,8 @@ async def lpush(
     try:
         r = RedisConnectionManager.get_connection()
         if isinstance(value, list):
-            serialized = [json.dumps(v) if isinstance(v, dict) else v for v in value]
-            r.lpush(name, *serialized)
+            vals = [json.dumps(v) if isinstance(v, dict) else v for v in value]
+            r.lpush(name, *reversed(vals))  # preserve input order left→right
         elif isinstance(value, dict):
             r.lpush(name, json.dumps(value))
         else:
@@ -35,16 +35,17 @@ async def lpush(
 @mcp.tool()
 async def rpush(
         name: str,
-        value: Union[Union[str, bytes, int, float, dict], List[Union[str, bytes, int, float, dict]]],
-        expire: int = None) -> str:
+        value: Union[str, bytes, int, float, dict, List[Union[str, bytes, int, float, dict]]],
+        expire: int = None
+) -> str:
     """
     Push one or more values onto the right of a Redis list and optionally set an expiration time.
     """
     try:
         r = RedisConnectionManager.get_connection()
         if isinstance(value, list):
-            serialized = [json.dumps(v) if isinstance(v, dict) else v for v in value]
-            r.rpush(name, *serialized)
+            vals = [json.dumps(v) if isinstance(v, dict) else v for v in value]
+            r.rpush(name, *vals)
         elif isinstance(value, dict):
             r.rpush(name, json.dumps(value))
         else:
@@ -54,7 +55,6 @@ async def rpush(
         return f"Value(s) '{value}' pushed to the right of list '{name}'."
     except RedisError as e:
         return f"Error pushing value(s) to list '{name}': {str(e)}"
-
 
 
 @mcp.tool()
