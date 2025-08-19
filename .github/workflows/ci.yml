@@ -25,10 +25,10 @@ jobs:
         egress-policy: audit
 
     - name: ⚙️ Checkout the project
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - name: ⚙️ Install uv
-      uses: astral-sh/setup-uv@v4
+      uses: astral-sh/setup-uv@v6
       with:
         version: "latest"
 
@@ -54,10 +54,10 @@ jobs:
         egress-policy: audit
 
     - name: ⚙️ Checkout the project
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - name: ⚙️ Install uv
-      uses: astral-sh/setup-uv@v4
+      uses: astral-sh/setup-uv@v6
       with:
         version: "latest"
 
@@ -107,10 +107,10 @@ jobs:
         egress-policy: audit
 
     - name: ⚙️ Checkout the project
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - name: ⚙️ Install uv
-      uses: astral-sh/setup-uv@v4
+      uses: astral-sh/setup-uv@v6
       with:
         version: "latest"
 
@@ -135,7 +135,7 @@ jobs:
         REDIS_PORT: 6379
 
     - name: ⚙️ Upload coverage reports
-      uses: codecov/codecov-action@v4
+      uses: codecov/codecov-action@v5
       if: matrix.python-version == '3.12'
       with:
         file: ./coverage.xml
@@ -152,10 +152,10 @@ jobs:
 
     steps:
     - name: ⚙️ Checkout the project
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - name: ⚙️ Install uv
-      uses: astral-sh/setup-uv@v4
+      uses: astral-sh/setup-uv@v6
       with:
         version: "latest"
 
@@ -200,12 +200,12 @@ jobs:
         egress-policy: audit
 
     - name: ⚙️ Checkout the project
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0  # Full history for UV build
 
     - name: ⚙️ Install uv
-      uses: astral-sh/setup-uv@v4
+      uses: astral-sh/setup-uv@v6
       with:
         version: "latest"
 
@@ -246,7 +246,7 @@ jobs:
         egress-policy: audit
 
     - name: ⚙️ Checkout the project
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - name: ⚙️ Build Docker image
       run: docker build -t redis-mcp-server:test .
