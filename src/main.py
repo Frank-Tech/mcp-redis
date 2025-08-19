@@ -1,6 +1,5 @@
 import logging
 import sys
-from argparse import ArgumentTypeError
 
 import click
 
@@ -50,27 +49,27 @@ class RedisMCPServer:
 @click.option("--ssl-ca-certs", help="Path to CA certificates file")
 @click.option("--cluster-mode", is_flag=True, help="Enable Redis cluster mode")
 def cli(
-    transport,
-    mcp_host,
-    mcp_port,
-    url,
-    host,
-    port,
-    db,
-    username,
-    password,
-    ssl,
-    ssl_ca_path,
-    ssl_keyfile,
-    ssl_certfile,
-    ssl_cert_reqs,
-    ssl_ca_certs,
-    cluster_mode,
+        transport,
+        mcp_host,
+        mcp_port,
+        url,
+        host,
+        port,
+        db,
+        username,
+        password,
+        ssl,
+        ssl_ca_path,
+        ssl_keyfile,
+        ssl_certfile,
+        ssl_cert_reqs,
+        ssl_ca_certs,
+        cluster_mode,
 ):
     """Redis MCP Server - Model Context Protocol server for Redis."""
     if transport == "stdio":
         if mcp_host != "127.0.0.1" or mcp_port != 8000:
-            raise ArgumentTypeError("Host and port should not be set when using 'stdio' transport.")
+            raise click.BadParameter("Host and port should not be set when using 'stdio' transport.")
 
     # Handle Redis URI if provided
     if url:
