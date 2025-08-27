@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any, Dict, Union, List
 
 from redis.exceptions import RedisError
 
@@ -7,21 +7,29 @@ from src.common.server import mcp
 
 
 @mcp.tool()
-async def delete(key: str) -> str:
-    """Delete a Redis key.
+async def delete(keys: Union[str, List[str]]) -> str:
+    """Delete one or more Redis keys.
 
     Args:
-        key (str): The key to delete.
+        keys (str or List[str]): A single Redis key (str) or multiple keys (list of str) to delete.
 
     Returns:
-        str: Confirmation message or an error message.
+        str: Confirmation message with the number of keys deleted,
+             or an error message if the operation fails.
     """
     try:
         r = RedisConnectionManager.get_connection()
-        result = r.delete(key)
-        return f"Successfully deleted {key}" if result else f"Key {key} not found"
+        # Ensure we always pass a list to Redis
+        if isinstance(keys, str):
+            keys = [keys]
+
+        result = r.delete(*keys)
+        if result > 0:
+            return f"Successfully deleted {result} key(s): {', '.join(keys)}"
+        else:
+            return f"No matching keys found for: {', '.join(keys)}"
     except RedisError as e:
-        return f"Error deleting key {key}: {str(e)}"
+        return f"Error deleting key(s) {keys}: {str(e)}"
 
 
 @mcp.tool()
