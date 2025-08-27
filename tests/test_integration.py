@@ -238,6 +238,10 @@ class TestMCPServerIntegration:
             "xdel",
             "set",
             "get",
+            "incr",
+            "decr",
+            "incrbyfloat",
+            "decrbyfloat",
         ]
         for tool in tool_names:
             assert tool in expected_tools, (
@@ -268,7 +272,7 @@ class TestMCPServerIntegration:
         tool_names = [tool["name"] for tool in tools]
 
         # Expected tool count (based on @mcp.tool() decorators in codebase)
-        expected_tool_count = 44
+        expected_tool_count = 48
         assert len(tools) == expected_tool_count, (
             f"Expected {expected_tool_count} tools, but got {len(tools)}"
         )
@@ -319,6 +323,10 @@ class TestMCPServerIntegration:
             "zadd",
             "zrange",
             "zrem",
+            "incr",
+            "decr",
+            "incrbyfloat",
+            "decrbyfloat",
         ]
 
         # Verify all expected tools are present
@@ -330,7 +338,7 @@ class TestMCPServerIntegration:
 
         # Verify tool categories are represented
         tool_categories = {
-            "string": ["get", "set"],
+            "string": ["get", "set", "incr", "decr", "incrbyfloat", "decrbyfloat"],
             "hash": ["hget", "hset", "hgetall", "hdel", "hexists"],
             "list": ["lpush", "rpush", "lpop", "rpop", "lrange", "llen"],
             "set": ["sadd", "srem", "smembers"],
