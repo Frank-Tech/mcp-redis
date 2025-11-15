@@ -9,9 +9,11 @@ from src.common.server import mcp
 
 @mcp.tool()
 async def lpush(
-        name: str,
-        value: Union[str, bytes, int, float, dict, List[Union[str, bytes, int, float, dict]]],
-        expire: Optional[int] = None
+    name: str,
+    value: Union[
+        str, bytes, int, float, dict, List[Union[str, bytes, int, float, dict]]
+    ],
+    expire: Optional[int] = None,
 ) -> str:
     """
     Push one or more values onto the left of a Redis list and optionally set an expiration time.
@@ -34,9 +36,11 @@ async def lpush(
 
 @mcp.tool()
 async def rpush(
-        name: str,
-        value: Union[str, bytes, int, float, dict, List[Union[str, bytes, int, float, dict]]],
-        expire: Optional[int] = None
+    name: str,
+    value: Union[
+        str, bytes, int, float, dict, List[Union[str, bytes, int, float, dict]]
+    ],
+    expire: Optional[int] = None,
 ) -> str:
     """
     Push one or more values onto the right of a Redis list and optionally set an expiration time.

@@ -34,7 +34,11 @@ class RedisMCPServer:
 
 
 @click.command()
-@click.option("--transport", default="stdio", help="Transport mechanism for the MCP server. Defaults to 'http'.")
+@click.option(
+    "--transport",
+    default="stdio",
+    help="Transport mechanism for the MCP server. Defaults to 'http'.",
+)
 @click.option("--mcp-host", default="127.0.0.1", help="MCP host")
 @click.option("--mcp-port", default=8000, type=int, help="MCP port")
 @click.option(
@@ -102,37 +106,39 @@ class RedisMCPServer:
     help="Retry delay in milliseconds",
 )
 def cli(
-        transport,
-        mcp_host,
-        mcp_port,
-        url,
-        host,
-        port,
-        db,
-        username,
-        password,
-        ssl,
-        ssl_ca_path,
-        ssl_keyfile,
-        ssl_certfile,
-        ssl_cert_reqs,
-        ssl_ca_certs,
-        cluster_mode,
-        entraid_auth_flow,
-        entraid_client_id,
-        entraid_client_secret,
-        entraid_tenant_id,
-        entraid_identity_type,
-        entraid_scopes,
-        entraid_resource,
-        entraid_token_refresh_ratio,
-        entraid_retry_max_attempts,
-        entraid_retry_delay_ms,
+    transport,
+    mcp_host,
+    mcp_port,
+    url,
+    host,
+    port,
+    db,
+    username,
+    password,
+    ssl,
+    ssl_ca_path,
+    ssl_keyfile,
+    ssl_certfile,
+    ssl_cert_reqs,
+    ssl_ca_certs,
+    cluster_mode,
+    entraid_auth_flow,
+    entraid_client_id,
+    entraid_client_secret,
+    entraid_tenant_id,
+    entraid_identity_type,
+    entraid_scopes,
+    entraid_resource,
+    entraid_token_refresh_ratio,
+    entraid_retry_max_attempts,
+    entraid_retry_delay_ms,
 ):
     """Redis MCP Server - Model Context Protocol server for Redis."""
     if transport == "stdio":
         if mcp_host != "127.0.0.1" or mcp_port != 8000:
-            raise click.BadParameter("Host and port should not be set when using 'stdio' transport.")
+            raise click.BadParameter(
+                "Host and port should not be set when using 'stdio' transport."
+            )
 
     # Handle Redis URI if provided (and not empty)
     # Note: gemini-cli passes the raw "${REDIS_URL}" string when the env var is not set
@@ -196,9 +202,9 @@ def cli(
 
     # For user-assigned managed identity, use client_id as user_assigned_identity_client_id
     if (
-            entraid_auth_flow == "managed_identity"
-            and entraid_identity_type == "user_assigned"
-            and entraid_client_id
+        entraid_auth_flow == "managed_identity"
+        and entraid_identity_type == "user_assigned"
+        and entraid_client_id
     ):
         entraid_config["user_assigned_identity_client_id"] = entraid_client_id
 
