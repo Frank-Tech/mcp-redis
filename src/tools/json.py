@@ -1,39 +1,38 @@
 import json
-from typing import Union, Mapping, List, TYPE_CHECKING
+from typing import Optional
 from redis.exceptions import RedisError
 
 from src.common.connection import RedisConnectionManager
 from src.common.server import mcp
 
-# Define JsonType for type checking to match redis-py definition
-# Use object as runtime type to avoid issubclass() issues with Any in Python 3.10
-if TYPE_CHECKING:
-    JsonType = Union[
-        str, int, float, bool, None, Mapping[str, "JsonType"], List["JsonType"]
-    ]
-else:
-    # Use object at runtime to avoid MCP framework issubclass() issues
-    JsonType = object
-
 
 @mcp.tool()
 async def json_set(
-    name: str, path: str, value: JsonType, expire_seconds: int = None
+    name: str,
+    path: str,
+    value: str,
+    expire_seconds: Optional[int] = None,
 ) -> str:
     """Set a JSON value in Redis at a given path with an optional expiration time.
 
     Args:
         name: The Redis key where the JSON document is stored.
         path: The JSON path where the value should be set.
-        value: The JSON value to store.
+        value: The JSON value to store (as JSON string, or will be auto-converted).
         expire_seconds: Optional; time in seconds after which the key should expire.
 
     Returns:
         A success message or an error message.
     """
+    # Try to parse the value as JSON, if it fails, treat it as a plain string
+    try:
+        parsed_value = json.loads(value)
+    except (json.JSONDecodeError, TypeError):
+        parsed_value = value
+
     try:
         r = RedisConnectionManager.get_connection()
-        r.json().set(name, path, value)
+        r.json().set(name, path, parsed_value)
 
         if expire_seconds is not None:
             r.expire(name, expire_seconds)

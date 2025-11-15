@@ -1,9 +1,11 @@
 # Redis MCP Server
+
+<!-- mcp-name: io.github.redis/mcp-redis -->
+
 [![Integration](https://github.com/redis/mcp-redis/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/redis/mcp-redis/actions/workflows/ci.yml)
 [![PyPI - Version](https://img.shields.io/pypi/v/redis-mcp-server)](https://pypi.org/project/redis-mcp-server/)
-[![Python Version](https://img.shields.io/badge/python-3.13%2B-blue&logo=redis)](https://www.python.org/downloads/)
+[![Python Version](https://img.shields.io/badge/python-3.14%2B-blue&logo=redis)](https://www.python.org/downloads/)
 [![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE.txt)
-[![smithery badge](https://smithery.ai/badge/@redis/mcp-redis)](https://smithery.ai/server/@redis/mcp-redis)
 [![Verified on MseeP](https://mseep.ai/badge.svg)](https://mseep.ai/app/70102150-efe0-4705-9f7d-87980109a279)
 [![Docker Image Version](https://img.shields.io/docker/v/mcp/redis?sort=semver&logo=docker&label=Docker)](https://hub.docker.com/r/mcp/redis)
 [![codecov](https://codecov.io/gh/redis/mcp-redis/branch/master/graph/badge.svg?token=yenl5fzxxr)](https://codecov.io/gh/redis/mcp-redis)
@@ -56,6 +58,8 @@ The Redis MCP Server is a **natural language interface** designed for agentic ap
   - [Redis ACL](#redis-acl)
   - [Configuration via command line arguments](#configuration-via-command-line-arguments)
   - [Configuration via Environment Variables](#configuration-via-environment-variables)
+  - [EntraID Authentication for Azure Managed Redis](#entraid-authentication-for-azure-managed-redis)
+  - [Logging](#logging)
 - [Integrations](#integrations)
   - [OpenAI Agents SDK](#openai-agents-sdk)
   - [Augment](#augment)
@@ -75,6 +79,7 @@ The Redis MCP Server is a **natural language interface** designed for agentic ap
 - **Full Redis Support**: Handles **hashes, lists, sets, sorted sets, streams**, and more.
 - **Search & Filtering**: Supports efficient data retrieval and searching in Redis.
 - **Scalable & Lightweight**: Designed for **high-performance** data operations.
+- **EntraID Authentication**: Native support for Azure Active Directory authentication with Azure Managed Redis.
 - The Redis MCP Server supports the `stdio` [transport](https://modelcontextprotocol.io/docs/concepts/transports#standard-input%2Foutput-stdio). Support to the `stremable-http` transport will be added in the future.
 
 ## Tools
@@ -97,7 +102,7 @@ Additional tools.
 
 ## Installation
 
-The Redis MCP Server is available as a PyPI package and as direct installation from the GitHub repository. 
+The Redis MCP Server is available as a PyPI package and as direct installation from the GitHub repository.
 
 ### From PyPI (recommended)
 Configuring the latest Redis MCP Server version from PyPI, as an example, can be done importing the following JSON configuration in the desired framework or tool.
@@ -120,7 +125,41 @@ The `uvx` command will download the server on the fly (if not cached already), c
 }
 ```
 
-You will find examples for different platforms along the README.
+#### URL specification
+
+The format to specify the `--url` argument follows the [redis](https://www.iana.org/assignments/uri-schemes/prov/redis) and [rediss](https://www.iana.org/assignments/uri-schemes/prov/rediss) schemes:
+
+```commandline
+redis://user:secret@localhost:6379/0?foo=bar&qux=baz
+```
+
+As an example, you can easily connect to a localhost server with:
+
+```commandline
+redis://localhost:6379/0
+```
+
+Where `0` is the [logical database](https://redis.io/docs/latest/commands/select/) you'd like to connect to.
+
+For an encrypted connection to the database (e.g., connecting to a [Redis Cloud](https://redis.io/cloud/) database), you'd use the `rediss` scheme.
+
+```commandline
+rediss://user:secret@localhost:6379/0?foo=bar&qux=baz
+```
+
+To verify the server's identity, specify `ssl_ca_certs`.
+
+```commandline
+rediss://user:secret@hostname:port?ssl_cert_reqs=required&ssl_ca_certs=path_to_the_certificate
+```
+
+For an unverified connection, set `ssl_cert_reqs` to `none`
+
+```commandline
+rediss://user:secret@hostname:port?ssl_cert_reqs=none
+```
+
+Configure your connection using the available options in the section "Available CLI Options".
 
 ### Testing the PyPI package
 
@@ -133,7 +172,7 @@ pip install redis-mcp-server
 And start it using `uv` the package in your environment.
 
 ```sh
-uv python install 3.13
+uv python install 3.14
 uv sync
 uv run redis-mcp-server --url redis://localhost:6379/0
 ```
@@ -144,7 +183,7 @@ However, starting the MCP Server is most useful when delegate to the framework o
 
 You can configure the desired Redis MCP Server version with `uvx`, which allows you to run it directly from GitHub (from a branch, or use a tagged release).
 
-> It is recommended to use a tagged release, the `main` branch is under active development and may contain breaking changes. 
+> It is recommended to use a tagged release, the `main` branch is under active development and may contain breaking changes.
 
 As an example, you can execute the following command to run the `0.2.0` release:
 
@@ -159,7 +198,7 @@ Additional examples are provided below.
 # Run with Redis URI
 uvx --from git+https://github.com/redis/mcp-redis.git redis-mcp-server --url redis://localhost:6379/0
 
-# Run with Redis URI and SSL 
+# Run with Redis URI and SSL
 uvx --from git+https://github.com/redis/mcp-redis.git redis-mcp-server --url "rediss://<USERNAME>:<PASSWORD>@<HOST>:<PORT>?ssl_cert_reqs=required&ssl_ca_certs=<PATH_TO_CERT>"
 
 # Run with individual parameters
@@ -214,7 +253,7 @@ The following example is for Claude Desktop, but the same applies to any other M
                 "REDIS_PORT": "<your_redis_database_port>",
                 "REDIS_PWD": "<your_redis_database_password>",
                 "REDIS_SSL": True|False,
-                "REDIS_CA_PATH": "<your_redis_ca_path>",
+                "REDIS_SSL_CA_PATH": "<your_redis_ca_path>",
                 "REDIS_CLUSTER_MODE": True|False
             }
         }
@@ -327,17 +366,96 @@ If desired, you can use environment variables. Defaults are provided for all var
 | `REDIS_USERNAME`     | Default database username                                 | `"default"`   |
 | `REDIS_PWD`          | Default database password                                 | ""            |
 | `REDIS_SSL`          | Enables or disables SSL/TLS                               | `False`       |
-| `REDIS_CA_PATH`      | CA certificate for verifying server                       | None          |
+| `REDIS_SSL_CA_PATH`  | CA certificate for verifying server                       | None          |
 | `REDIS_SSL_KEYFILE`  | Client's private key file for client authentication       | None          |
 | `REDIS_SSL_CERTFILE` | Client's certificate file for client authentication       | None          |
-| `REDIS_CERT_REQS`    | Whether the client should verify the server's certificate | `"required"`  |
-| `REDIS_CA_CERTS`     | Path to the trusted CA certificates file                  | None          |
+| `REDIS_SSL_CERT_REQS`| Whether the client should verify the server's certificate | `"required"`  |
+| `REDIS_SSL_CA_CERTS` | Path to the trusted CA certificates file                  | None          |
 | `REDIS_CLUSTER_MODE` | Enable Redis Cluster mode                                 | `False`       |
 
+### EntraID Authentication for Azure Managed Redis
+
+The Redis MCP Server supports **EntraID (Azure Active Directory) authentication** for Azure Managed Redis, enabling OAuth-based authentication with automatic token management.
+
+#### Authentication Providers
+
+**Service Principal Authentication** - Application-based authentication using client credentials:
+```bash
+export REDIS_ENTRAID_AUTH_FLOW=service_principal
+export REDIS_ENTRAID_CLIENT_ID=your-client-id
+export REDIS_ENTRAID_CLIENT_SECRET=your-client-secret
+export REDIS_ENTRAID_TENANT_ID=your-tenant-id
+```
+
+**Managed Identity Authentication** - For Azure-hosted applications:
+```bash
+# System-assigned managed identity
+export REDIS_ENTRAID_AUTH_FLOW=managed_identity
+export REDIS_ENTRAID_IDENTITY_TYPE=system_assigned
+
+# User-assigned managed identity
+export REDIS_ENTRAID_AUTH_FLOW=managed_identity
+export REDIS_ENTRAID_IDENTITY_TYPE=user_assigned
+export REDIS_ENTRAID_USER_ASSIGNED_CLIENT_ID=your-identity-client-id
+```
+
+**Default Azure Credential** - Automatic credential discovery (recommended for development):
+```bash
+export REDIS_ENTRAID_AUTH_FLOW=default_credential
+export REDIS_ENTRAID_SCOPES=https://redis.azure.com/.default
+```
+
+#### EntraID Configuration Variables
+
+| Name                                    | Description                                               | Default Value                        |
+|-----------------------------------------|-----------------------------------------------------------|--------------------------------------|
+| `REDIS_ENTRAID_AUTH_FLOW`               | Authentication flow type                                  | None (EntraID disabled)              |
+| `REDIS_ENTRAID_CLIENT_ID`               | Service Principal client ID                               | None                                 |
+| `REDIS_ENTRAID_CLIENT_SECRET`           | Service Principal client secret                           | None                                 |
+| `REDIS_ENTRAID_TENANT_ID`               | Azure tenant ID                                           | None                                 |
+| `REDIS_ENTRAID_IDENTITY_TYPE`           | Managed identity type                                     | `"system_assigned"`                  |
+| `REDIS_ENTRAID_USER_ASSIGNED_CLIENT_ID` | User-assigned managed identity client ID                  | None                                 |
+| `REDIS_ENTRAID_SCOPES`                  | OAuth scopes for Default Azure Credential                | `"https://redis.azure.com/.default"` |
+| `REDIS_ENTRAID_RESOURCE`                | Azure Redis resource identifier                          | `"https://redis.azure.com/"`         |
+
+#### Key Features
+
+- **Automatic token renewal** - Background token refresh with no manual intervention
+- **Graceful fallback** - Falls back to standard Redis authentication when EntraID not configured
+- **Multiple auth flows** - Supports Service Principal, Managed Identity, and Default Azure Credential
+- **Enterprise ready** - Designed for Azure Managed Redis with centralized identity management
+
+#### Example Configuration
+
+For **local development** with Azure CLI:
+```bash
+# Login with Azure CLI
+az login
+
+# Configure MCP server
+export REDIS_ENTRAID_AUTH_FLOW=default_credential
+export REDIS_URL=redis://your-azure-redis.redis.cache.windows.net:6379
+```
+
+For **production** with Service Principal:
+```bash
+export REDIS_ENTRAID_AUTH_FLOW=service_principal
+export REDIS_ENTRAID_CLIENT_ID=your-app-client-id
+export REDIS_ENTRAID_CLIENT_SECRET=your-app-secret
+export REDIS_ENTRAID_TENANT_ID=your-tenant-id
+export REDIS_URL=redis://your-azure-redis.redis.cache.windows.net:6379
+```
+
+For **Azure-hosted applications** with Managed Identity:
+```bash
+export REDIS_ENTRAID_AUTH_FLOW=managed_identity
+export REDIS_ENTRAID_IDENTITY_TYPE=system_assigned
+export REDIS_URL=redis://your-azure-redis.redis.cache.windows.net:6379
+```
 
 There are several ways to set environment variables:
 
-1. **Using a `.env` File**:  
+1. **Using a `.env` File**:
 Place a `.env` file in your project directory with key-value pairs for each environment variable. Tools like `python-dotenv`, `pipenv`, and `uv` can automatically load these variables when running your application. This is a convenient and secure way to manage configuration, as it keeps sensitive data out of your shell history and version control (if `.env` is in `.gitignore`).
 For example, create a `.env` file with the following content from the `.env.example` file provided in the repository:
 
@@ -349,7 +467,7 @@ Then edit the `.env` file to set your Redis configuration:
 
 OR,
 
-2. **Setting Variables in the Shell**:  
+2. **Setting Variables in the Shell**:
 You can export environment variables directly in your shell before running your application. For example:
 
 ```sh
@@ -359,6 +477,46 @@ export REDIS_PORT=6379
 ```
 
 This method is useful for temporary overrides or quick testing.
+
+
+### Logging
+
+The server uses Python's standard logging and is configured at startup. By default it logs at WARNING and above. You can change verbosity with the `MCP_REDIS_LOG_LEVEL` environment variable.
+
+- Accepted values (case-insensitive): `DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`, `NOTSET`
+- Aliases supported: `WARN` → `WARNING`, `FATAL` → `CRITICAL`
+- Numeric values are also accepted, including signed (e.g., `"10"`, `"+20"`)
+- Default when unset or unrecognized: `WARNING`
+
+Handler behavior
+- If the host (e.g., `uv`, VS Code, pytest) already installed console handlers, the server will NOT add its own; it only lowers overly-restrictive handler thresholds so your chosen level is not filtered out. It will never raise a handler's threshold.
+- If no handlers are present, the server adds a single stderr StreamHandler with a simple format.
+
+Examples
+```bash
+# See normal lifecycle messages
+MCP_REDIS_LOG_LEVEL=INFO uv run src/main.py
+
+# Very verbose for debugging
+MCP_REDIS_LOG_LEVEL=DEBUG uvx --from redis-mcp-server@latest redis-mcp-server --url redis://localhost:6379/0
+```
+
+In MCP client configs that support env, add it alongside your Redis settings. For example:
+```json
+{
+  "mcpServers": {
+    "redis": {
+      "command": "uvx",
+      "args": ["--from", "redis-mcp-server@latest", "redis-mcp-server", "--url", "redis://localhost:6379/0"],
+      "env": {
+        "REDIS_HOST": "localhost",
+        "REDIS_PORT": "6379",
+        "MCP_REDIS_LOG_LEVEL": "INFO"
+      }
+    }
+  }
+}
+```
 
 
 ## Integrations
@@ -384,7 +542,7 @@ export OPENAI_API_KEY="<openai_token>"
 And run the [application](./examples/redis_assistant.py).
 
 ```commandline
-python3.13 redis_assistant.py
+python3.14 redis_assistant.py
 ```
 
 You can troubleshoot your agent workflows using the [OpenAI dashboard](https://platform.openai.com/traces/).
@@ -416,6 +574,7 @@ You can also configure the Redis MCP Server in Augment manually by importing the
 
 The simplest way to configure MCP clients is using `uvx`. Add the following JSON to your `claude_desktop_config.json`, remember to provide the full path to `uvx`.
 
+**Basic Redis connection:**
 ```json
 {
   "mcpServers": {
@@ -432,14 +591,26 @@ The simplest way to configure MCP clients is using `uvx`. Add the following JSON
 }
 ```
 
-If you'd like to test the [Redis MCP Server](https://smithery.ai/server/@redis/mcp-redis) via Smithery, you can configure Claude Desktop automatically:
-
-```bash
-npx -y @smithery/cli install @redis/mcp-redis --client claude
+**Azure Managed Redis with EntraID authentication:**
+```json
+{
+  "mcpServers": {
+    "redis-mcp-server": {
+        "type": "stdio",
+        "command": "/Users/mortensi/.local/bin/uvx",
+        "args": [
+            "--from", "redis-mcp-server@latest",
+            "redis-mcp-server",
+            "--url", "redis://your-azure-redis.redis.cache.windows.net:6379"
+        ],
+        "env": {
+            "REDIS_ENTRAID_AUTH_FLOW": "default_credential",
+            "REDIS_ENTRAID_SCOPES": "https://redis.azure.com/.default"
+        }
+    }
+  }
+}
 ```
-
-Follow the prompt and provide the details to configure the server and connect to Redis (e.g. using a Redis Cloud database).
-The procedure will create the proper configuration in the `claude_desktop_config.json` configuration file.
 
 ### VS Code with GitHub Copilot
 
@@ -455,9 +626,9 @@ You can start the GitHub desired version of the Redis MCP server using `uvx` by 
 
 ```json
 "servers": {
-  "Redis MCP Server": {
+  "redis": {
     "type": "stdio",
-    "command": "uvx", 
+    "command": "uvx",
     "args": [
       "--from", "redis-mcp-server@latest",
       "redis-mcp-server",
@@ -467,9 +638,31 @@ You can start the GitHub desired version of the Redis MCP server using `uvx` by 
 }
 ```
 
+#### Suppressing uvx Installation Messages
+
+If you want to suppress uvx installation messages that may appear as warnings in MCP client logs, use the `-qq` flag:
+
+```json
+"servers": {
+  "redis": {
+    "type": "stdio",
+    "command": "uvx",
+    "args": [
+      "-qq",
+      "--from", "redis-mcp-server@latest",
+      "redis-mcp-server",
+      "--url", "redis://localhost:6379/0"
+    ]
+  },
+}
+```
+
+The `-qq` flag enables silent mode, which suppresses "Installed X packages" messages that uvx writes to stderr during package installation.
+
 Alternatively, you can start the server using `uv` and configure your `mcp.json`. This is usually desired for development.
 
 ```json
+// mcp.json
 {
   "servers": {
     "redis": {
@@ -493,6 +686,8 @@ Alternatively, you can start the server using `uv` and configure your `mcp.json`
 ```
 
 For more information, see the [VS Code documentation](https://code.visualstudio.com/docs/copilot/chat/mcp-servers).
+
+> **Tip:** You can prompt Copilot chat to use the Redis MCP tools by including `#redis` in your message.
 
 > **Note:** Starting with [VS Code v1.102](https://code.visualstudio.com/updates/v1_102),  
 > MCP servers are now stored in a dedicated `mcp.json` file instead of `settings.json`. 
@@ -528,3 +723,5 @@ This project is licensed under the **MIT License**.
 
 ## Contact
 For questions or support, reach out via [GitHub Issues](https://github.com/redis/mcp-redis/issues).
+
+Alternatively, you can join the [Redis Discord server](https://discord.gg/redis) and ask in the `#redis-mcp-server` channel.

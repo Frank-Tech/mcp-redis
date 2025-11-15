@@ -44,9 +44,10 @@
           fetch-depth: 0  # Full history for UV build
   
       - name: ⚙️ Install uv
-        uses: astral-sh/setup-uv@v6
+        uses: astral-sh/setup-uv@v7
         with:
           version: "latest"
+          enable-cache: false
   
       - name: ⚙️ Set up Python
         run: uv python install 3.12
@@ -66,9 +67,10 @@
           fetch-depth: 0
   
       - name: ⚙️ Install uv
-        uses: astral-sh/setup-uv@v6
+        uses: astral-sh/setup-uv@v7
         with:
           version: "latest"
+          enable-cache: false
   
       - name: ⚙️ Set Python up and add dependencies
         run: |
@@ -85,7 +87,7 @@
       needs: validate-release
       strategy:
         matrix:
-          python-version: ["3.10", "3.11", "3.12", "3.13"]
+          python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
   
       services:
         redis:
@@ -110,9 +112,10 @@
           fetch-depth: 0
   
       - name: ⚙️ Install uv
-        uses: astral-sh/setup-uv@v6
+        uses: astral-sh/setup-uv@v7
         with:
           version: "latest"
+          enable-cache: false
   
       - name: ⚙️ Set up Python ${{ matrix.python-version }}
         run: |
@@ -155,9 +158,10 @@
           fetch-depth: 0  # Full history for UV build
   
       - name: ⚙️ Install uv
-        uses: astral-sh/setup-uv@v6
+        uses: astral-sh/setup-uv@v7
         with:
           version: "latest"
+          enable-cache: false
   
       - name: ⚙️ Set up Python
         run: uv python install 3.12
@@ -233,7 +237,7 @@
           echo "✅ Package is ready for publishing to ${{ github.event.inputs.environment || 'pypi' }}"
   
       - name: ⚙️ Upload build artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: dist-${{ needs.validate-release.outputs.version }}
           path: dist/

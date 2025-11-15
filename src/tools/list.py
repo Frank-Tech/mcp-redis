@@ -1,7 +1,8 @@
 import json
-from typing import Union, List
+from typing import Union, List, Optional
 
 from redis.exceptions import RedisError
+from redis.typing import FieldT
 
 from src.common.connection import RedisConnectionManager
 from src.common.server import mcp
@@ -11,7 +12,7 @@ from src.common.server import mcp
 async def lpush(
         name: str,
         value: Union[str, bytes, int, float, dict, List[Union[str, bytes, int, float, dict]]],
-        expire: int = None
+        expire: Optional[int] = None
 ) -> str:
     """
     Push one or more values onto the left of a Redis list and optionally set an expiration time.
@@ -36,7 +37,7 @@ async def lpush(
 async def rpush(
         name: str,
         value: Union[str, bytes, int, float, dict, List[Union[str, bytes, int, float, dict]]],
-        expire: int = None
+        expire: Optional[int] = None
 ) -> str:
     """
     Push one or more values onto the right of a Redis list and optionally set an expiration time.
@@ -80,7 +81,7 @@ async def rpop(name: str) -> str:
 
 
 @mcp.tool()
-async def lrange(name: str, start: int, stop: int) -> list:
+async def lrange(name: str, start: int, stop: int) -> Union[str, List[str]]:
     """Get elements from a Redis list within a specific range.
 
     Returns:
