@@ -2,7 +2,6 @@ import json
 from typing import Union, List, Optional
 
 from redis.exceptions import RedisError
-from redis.typing import FieldT
 
 from src.common.connection import RedisConnectionManager
 from src.common.server import mcp

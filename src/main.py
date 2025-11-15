@@ -29,7 +29,7 @@ class RedisMCPServer:
                 mcp.settings.host = self.host
                 mcp.settings.port = self.port
                 mcp.run(transport=self.transport)
-        except KeyboardInterrupt as e:
+        except KeyboardInterrupt:
             logging.info("KeyboardInterrupt")
 
 
