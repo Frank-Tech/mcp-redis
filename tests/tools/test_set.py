@@ -2,7 +2,7 @@
 Unit tests for src/tools/set.py
 """
 
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, patch, AsyncMock
 
 import pytest
 from redis.exceptions import RedisError
@@ -17,7 +17,7 @@ class TestSetOperations:
     async def test_sadd_success(self, mock_redis_connection_manager):
         """Test successful set add operation."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.sadd.return_value = 1  # Number of elements added
+        mock_redis.sadd = AsyncMock(return_value=1)  # Number of elements added
 
         result = await sadd("test_set", "member1")
 
@@ -28,8 +28,8 @@ class TestSetOperations:
     async def test_sadd_with_expiration(self, mock_redis_connection_manager):
         """Test set add operation with expiration."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.sadd.return_value = 1
-        mock_redis.expire.return_value = True
+        mock_redis.sadd = AsyncMock(return_value=1)
+        mock_redis.expire = AsyncMock(return_value=True)
 
         result = await sadd("test_set", "member1", 60)
 
@@ -41,7 +41,7 @@ class TestSetOperations:
     async def test_sadd_member_already_exists(self, mock_redis_connection_manager):
         """Test set add operation when member already exists."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.sadd.return_value = 0  # Member already exists
+        mock_redis.sadd = AsyncMock(return_value=0)  # Member already exists
 
         result = await sadd("test_set", "existing_member")
 
@@ -51,7 +51,7 @@ class TestSetOperations:
     async def test_sadd_redis_error(self, mock_redis_connection_manager):
         """Test set add operation with Redis error."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.sadd.side_effect = RedisError("Connection failed")
+        mock_redis.sadd = AsyncMock(side_effect=RedisError("Connection failed"))
 
         result = await sadd("test_set", "member1")
 
@@ -64,7 +64,7 @@ class TestSetOperations:
     async def test_sadd_numeric_member(self, mock_redis_connection_manager):
         """Test set add operation with numeric member."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.sadd.return_value = 1
+        mock_redis.sadd = AsyncMock(return_value=1)
 
         result = await sadd("test_set", 42)
 
@@ -75,7 +75,7 @@ class TestSetOperations:
     async def test_srem_success(self, mock_redis_connection_manager):
         """Test successful set remove operation."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.srem.return_value = 1  # Number of elements removed
+        mock_redis.srem = AsyncMock(return_value=1)  # Number of elements removed
 
         result = await srem("test_set", "member1")
 
@@ -86,7 +86,7 @@ class TestSetOperations:
     async def test_srem_member_not_exists(self, mock_redis_connection_manager):
         """Test set remove operation when member doesn't exist."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.srem.return_value = 0  # Member doesn't exist
+        mock_redis.srem = AsyncMock(return_value=0)  # Member doesn't exist
 
         result = await srem("test_set", "nonexistent_member")
 
@@ -96,7 +96,7 @@ class TestSetOperations:
     async def test_srem_redis_error(self, mock_redis_connection_manager):
         """Test set remove operation with Redis error."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.srem.side_effect = RedisError("Connection failed")
+        mock_redis.srem = AsyncMock(side_effect=RedisError("Connection failed"))
 
         result = await srem("test_set", "member1")
 
@@ -109,7 +109,7 @@ class TestSetOperations:
     async def test_srem_numeric_member(self, mock_redis_connection_manager):
         """Test set remove operation with numeric member."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.srem.return_value = 1
+        mock_redis.srem = AsyncMock(return_value=1)
 
         result = await srem("test_set", 42)
 
@@ -120,7 +120,7 @@ class TestSetOperations:
     async def test_smembers_success(self, mock_redis_connection_manager):
         """Test successful set members operation."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.smembers.return_value = {"member1", "member2", "member3"}
+        mock_redis.smembers = AsyncMock(return_value={"member1", "member2", "member3"})
 
         result = await smembers("test_set")
 
@@ -131,7 +131,7 @@ class TestSetOperations:
     async def test_smembers_empty_set(self, mock_redis_connection_manager):
         """Test set members operation on empty set."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.smembers.return_value = set()
+        mock_redis.smembers = AsyncMock(return_value=set())
 
         result = await smembers("empty_set")
 
@@ -141,7 +141,7 @@ class TestSetOperations:
     async def test_smembers_redis_error(self, mock_redis_connection_manager):
         """Test set members operation with Redis error."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.smembers.side_effect = RedisError("Connection failed")
+        mock_redis.smembers = AsyncMock(side_effect=RedisError("Connection failed"))
 
         result = await smembers("test_set")
 
@@ -151,7 +151,7 @@ class TestSetOperations:
     async def test_smembers_single_member(self, mock_redis_connection_manager):
         """Test set members operation with single member."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.smembers.return_value = {"single_member"}
+        mock_redis.smembers = AsyncMock(return_value={"single_member"})
 
         result = await smembers("test_set")
 
@@ -161,7 +161,7 @@ class TestSetOperations:
     async def test_smembers_numeric_members(self, mock_redis_connection_manager):
         """Test set members operation with numeric members."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.smembers.return_value = {"1", "2", "3", "42"}
+        mock_redis.smembers = AsyncMock(return_value={"1", "2", "3", "42"})
 
         result = await smembers("numeric_set")
 
@@ -171,8 +171,8 @@ class TestSetOperations:
     async def test_sadd_expiration_error(self, mock_redis_connection_manager):
         """Test set add operation when expiration fails."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.sadd.return_value = 1
-        mock_redis.expire.side_effect = RedisError("Expire failed")
+        mock_redis.sadd = AsyncMock(return_value=1)
+        mock_redis.expire = AsyncMock(side_effect=RedisError("Expire failed"))
 
         result = await sadd("test_set", "member1", 60)
 
@@ -182,7 +182,7 @@ class TestSetOperations:
     async def test_sadd_with_special_characters(self, mock_redis_connection_manager):
         """Test set add operation with special characters in member."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.sadd.return_value = 1
+        mock_redis.sadd = AsyncMock(return_value=1)
 
         special_member = "member:with:colons"
         result = await sadd("test_set", special_member)
@@ -196,7 +196,7 @@ class TestSetOperations:
     async def test_sadd_with_unicode_member(self, mock_redis_connection_manager):
         """Test set add operation with unicode member."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.sadd.return_value = 1
+        mock_redis.sadd = AsyncMock(return_value=1)
 
         unicode_member = "测试成员 🚀"
         result = await sadd("test_set", unicode_member)
@@ -211,7 +211,7 @@ class TestSetOperations:
         """Test set members operation with large set."""
         mock_redis = mock_redis_connection_manager
         large_set = {f"member_{i}" for i in range(1000)}
-        mock_redis.smembers.return_value = large_set
+        mock_redis.smembers = AsyncMock(return_value=large_set)
 
         result = await smembers("large_set")
 
@@ -223,7 +223,7 @@ class TestSetOperations:
     async def test_srem_multiple_members_behavior(self, mock_redis_connection_manager):
         """Test that srem function handles single member correctly."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.srem.return_value = 1
+        mock_redis.srem = AsyncMock(return_value=1)
 
         result = await srem("test_set", "single_member")
 
@@ -238,7 +238,7 @@ class TestSetOperations:
             "src.tools.set.RedisConnectionManager.get_connection"
         ) as mock_get_conn:
             mock_redis = Mock()
-            mock_redis.sadd.return_value = 1
+            mock_redis.sadd = AsyncMock(return_value=1)
             mock_get_conn.return_value = mock_redis
 
             await sadd("test_set", "member1")

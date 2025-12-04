@@ -3,7 +3,7 @@ Unit tests for src/tools/redis_query_engine.py
 """
 
 import json
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, patch, AsyncMock
 
 import pytest
 from redis.commands.search.field import VectorField
@@ -27,7 +27,7 @@ class TestRedisQueryEngineOperations:
         """Test successful get indexes operation."""
         mock_redis = mock_redis_connection_manager
         mock_indexes = ["index1", "index2", "vector_index"]
-        mock_redis.execute_command.return_value = mock_indexes
+        mock_redis.execute_command = AsyncMock(return_value=mock_indexes)
 
         result = await get_indexes()
 
@@ -38,7 +38,7 @@ class TestRedisQueryEngineOperations:
     async def test_get_indexes_empty(self, mock_redis_connection_manager):
         """Test get indexes operation with no indexes."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.execute_command.return_value = []
+        mock_redis.execute_command = AsyncMock(return_value=[])
 
         result = await get_indexes()
 
@@ -48,7 +48,7 @@ class TestRedisQueryEngineOperations:
     async def test_get_indexes_redis_error(self, mock_redis_connection_manager):
         """Test get indexes operation with Redis error."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.execute_command.side_effect = RedisError("Search module not loaded")
+        mock_redis.execute_command = AsyncMock(side_effect=RedisError("Search module not loaded"))
 
         result = await get_indexes()
 
@@ -62,7 +62,7 @@ class TestRedisQueryEngineOperations:
         mock_redis = mock_redis_connection_manager
         mock_ft = Mock()
         mock_redis.ft.return_value = mock_ft
-        mock_ft.create_index.return_value = "OK"
+        mock_ft.create_index = AsyncMock(return_value="OK")
 
         result = await create_vector_index_hash()
 
@@ -89,7 +89,7 @@ class TestRedisQueryEngineOperations:
         mock_redis = mock_redis_connection_manager
         mock_ft = Mock()
         mock_redis.ft.return_value = mock_ft
-        mock_ft.create_index.return_value = "OK"
+        mock_ft.create_index = AsyncMock(return_value="OK")
 
         result = await create_vector_index_hash(
             index_name="custom_index",
@@ -115,7 +115,7 @@ class TestRedisQueryEngineOperations:
         mock_redis = mock_redis_connection_manager
         mock_ft = Mock()
         mock_redis.ft.return_value = mock_ft
-        mock_ft.create_index.side_effect = RedisError("Index already exists")
+        mock_ft.create_index = AsyncMock(side_effect=RedisError("Index already exists"))
 
         result = await create_vector_index_hash()
 
@@ -138,7 +138,7 @@ class TestRedisQueryEngineOperations:
 
         mock_result = Mock()
         mock_result.docs = [mock_doc1, mock_doc2]
-        mock_ft.search.return_value = mock_result
+        mock_ft.search = AsyncMock(return_value=mock_result)
 
         with patch("numpy.array") as mock_np_array:
             mock_np_array.return_value.tobytes.return_value = b"query_vector_bytes"
@@ -166,7 +166,7 @@ class TestRedisQueryEngineOperations:
 
         mock_result = Mock()
         mock_result.docs = []
-        mock_ft.search.return_value = mock_result
+        mock_ft.search = AsyncMock(return_value=mock_result)
 
         with patch("numpy.array") as mock_np_array:
             mock_np_array.return_value.tobytes.return_value = b"query_vector_bytes"
@@ -193,7 +193,7 @@ class TestRedisQueryEngineOperations:
 
         mock_result = Mock()
         mock_result.docs = []
-        mock_ft.search.return_value = mock_result
+        mock_ft.search = AsyncMock(return_value=mock_result)
 
         with patch("numpy.array") as mock_np_array:
             mock_np_array.return_value.tobytes.return_value = b"query_vector_bytes"
@@ -210,7 +210,7 @@ class TestRedisQueryEngineOperations:
         mock_redis = mock_redis_connection_manager
         mock_ft = Mock()
         mock_redis.ft.return_value = mock_ft
-        mock_ft.search.side_effect = RedisError("Index not found")
+        mock_ft.search = AsyncMock(side_effect=RedisError("Index not found"))
 
         with patch("numpy.array") as mock_np_array:
             mock_np_array.return_value.astype.return_value.tobytes.return_value = (
@@ -250,7 +250,7 @@ class TestRedisQueryEngineOperations:
             "sortable_values_size_mb": "0.00",
             "key_table_size_mb": "0.00",
         }
-        mock_ft.info.return_value = mock_info
+        mock_ft.info = AsyncMock(return_value=mock_info)
 
         result = await get_index_info("vector_index")
 
@@ -265,7 +265,7 @@ class TestRedisQueryEngineOperations:
         mock_redis = mock_redis_connection_manager
         mock_ft = Mock()
         mock_redis.ft.return_value = mock_ft
-        mock_ft.info.return_value = {"index_name": "vector_index"}
+        mock_ft.info = AsyncMock(return_value={"index_name": "vector_index"})
 
         result = await get_index_info("vector_index")
 
@@ -281,7 +281,7 @@ class TestRedisQueryEngineOperations:
         mock_redis = mock_redis_connection_manager
         mock_ft = Mock()
         mock_redis.ft.return_value = mock_ft
-        mock_ft.info.side_effect = RedisError("Index not found")
+        mock_ft.info = AsyncMock(side_effect=RedisError("Index not found"))
 
         result = await get_index_info("nonexistent_index")
 
@@ -295,7 +295,7 @@ class TestRedisQueryEngineOperations:
         mock_redis = mock_redis_connection_manager
         mock_ft = Mock()
         mock_redis.ft.return_value = mock_ft
-        mock_ft.create_index.return_value = "OK"
+        mock_ft.create_index = AsyncMock(return_value="OK")
 
         # Test L2 metric
         await create_vector_index_hash(distance_metric="L2")
@@ -317,7 +317,7 @@ class TestRedisQueryEngineOperations:
 
         mock_result = Mock()
         mock_result.docs = []
-        mock_ft.search.return_value = mock_result
+        mock_ft.search = AsyncMock(return_value=mock_result)
 
         with patch("numpy.array") as mock_np_array:
             mock_np_array.return_value.astype.return_value.tobytes.return_value = (
@@ -337,7 +337,7 @@ class TestRedisQueryEngineOperations:
             "src.tools.redis_query_engine.RedisConnectionManager.get_connection"
         ) as mock_get_conn:
             mock_redis = Mock()
-            mock_redis.execute_command.return_value = []
+            mock_redis.execute_command = AsyncMock(return_value=[])
             mock_get_conn.return_value = mock_redis
 
             await get_indexes()

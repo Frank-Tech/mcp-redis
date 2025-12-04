@@ -3,6 +3,7 @@ Unit tests for src/tools/json.py
 """
 
 import json
+from unittest.mock import AsyncMock
 
 import pytest
 from redis.exceptions import RedisError
@@ -19,7 +20,7 @@ class TestJSONOperations:
     ):
         """Test successful JSON set operation."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.json.return_value.set.return_value = "OK"
+        mock_redis.json.return_value.set = AsyncMock(return_value="OK")
 
         result = await json_set("test_doc", "$", sample_json_data)
 
@@ -34,8 +35,8 @@ class TestJSONOperations:
     ):
         """Test JSON set operation with expiration."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.json.return_value.set.return_value = "OK"
-        mock_redis.expire.return_value = True
+        mock_redis.json.return_value.set = AsyncMock(return_value="OK")
+        mock_redis.expire = AsyncMock(return_value=True)
 
         result = await json_set("test_doc", "$.name", "John Updated", 60)
 
@@ -49,7 +50,7 @@ class TestJSONOperations:
     async def test_json_set_nested_path(self, mock_redis_connection_manager):
         """Test JSON set operation with nested path."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.json.return_value.set.return_value = "OK"
+        mock_redis.json.return_value.set = AsyncMock(return_value="OK")
 
         result = await json_set("test_doc", "$.user.profile.age", 25)
 
@@ -62,8 +63,8 @@ class TestJSONOperations:
     async def test_json_set_redis_error(self, mock_redis_connection_manager):
         """Test JSON set operation with Redis error."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.json.return_value.set.side_effect = RedisError(
-            "JSON module not loaded"
+        mock_redis.json.return_value.set = AsyncMock(
+            side_effect=RedisError("JSON module not loaded")
         )
 
         result = await json_set("test_doc", "$", {"key": "value"})
@@ -79,7 +80,7 @@ class TestJSONOperations:
     ):
         """Test successful JSON get operation."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.json.return_value.get.return_value = sample_json_data
+        mock_redis.json.return_value.get = AsyncMock(return_value=sample_json_data)
 
         result = await json_get("test_doc", "$")
 
@@ -91,7 +92,7 @@ class TestJSONOperations:
     async def test_json_get_specific_field(self, mock_redis_connection_manager):
         """Test JSON get operation for specific field."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.json.return_value.get.return_value = ["John Doe"]
+        mock_redis.json.return_value.get = AsyncMock(return_value=["John Doe"])
 
         result = await json_get("test_doc", "$.name")
 
@@ -105,7 +106,7 @@ class TestJSONOperations:
     ):
         """Test JSON get operation with default path."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.json.return_value.get.return_value = sample_json_data
+        mock_redis.json.return_value.get = AsyncMock(return_value=sample_json_data)
 
         result = await json_get("test_doc")
 
@@ -117,7 +118,7 @@ class TestJSONOperations:
     async def test_json_get_not_found(self, mock_redis_connection_manager):
         """Test JSON get operation when document doesn't exist."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.json.return_value.get.return_value = None
+        mock_redis.json.return_value.get = AsyncMock(return_value=None)
 
         result = await json_get("nonexistent_doc", "$")
 
@@ -127,7 +128,9 @@ class TestJSONOperations:
     async def test_json_get_redis_error(self, mock_redis_connection_manager):
         """Test JSON get operation with Redis error."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.json.return_value.get.side_effect = RedisError("Connection failed")
+        mock_redis.json.return_value.get = AsyncMock(
+            side_effect=RedisError("Connection failed")
+        )
 
         result = await json_get("test_doc", "$")
 
@@ -140,7 +143,7 @@ class TestJSONOperations:
     async def test_json_del_success(self, mock_redis_connection_manager):
         """Test successful JSON delete operation."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.json.return_value.delete.return_value = 1
+        mock_redis.json.return_value.delete = AsyncMock(return_value=1)
 
         result = await json_del("test_doc", "$.name")
 
@@ -153,7 +156,7 @@ class TestJSONOperations:
     async def test_json_del_default_path(self, mock_redis_connection_manager):
         """Test JSON delete operation with default path (entire document)."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.json.return_value.delete.return_value = 1
+        mock_redis.json.return_value.delete = AsyncMock(return_value=1)
 
         result = await json_del("test_doc")
 
@@ -164,7 +167,7 @@ class TestJSONOperations:
     async def test_json_del_not_found(self, mock_redis_connection_manager):
         """Test JSON delete operation when path doesn't exist."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.json.return_value.delete.return_value = 0
+        mock_redis.json.return_value.delete = AsyncMock(return_value=0)
 
         result = await json_del("test_doc", "$.nonexistent")
 
@@ -174,8 +177,8 @@ class TestJSONOperations:
     async def test_json_del_redis_error(self, mock_redis_connection_manager):
         """Test JSON delete operation with Redis error."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.json.return_value.delete.side_effect = RedisError(
-            "Connection failed"
+        mock_redis.json.return_value.delete = AsyncMock(
+            side_effect=RedisError("Connection failed")
         )
 
         result = await json_del("test_doc", "$.name")
@@ -189,7 +192,7 @@ class TestJSONOperations:
     async def test_json_set_with_array(self, mock_redis_connection_manager):
         """Test JSON set operation with array value."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.json.return_value.set.return_value = "OK"
+        mock_redis.json.return_value.set = AsyncMock(return_value="OK")
 
         array_data = ["item1", "item2", "item3"]
         result = await json_set("test_doc", "$.items", array_data)
@@ -203,7 +206,7 @@ class TestJSONOperations:
     async def test_json_set_with_nested_object(self, mock_redis_connection_manager):
         """Test JSON set operation with nested object."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.json.return_value.set.return_value = "OK"
+        mock_redis.json.return_value.set = AsyncMock(return_value="OK")
 
         nested_data = {
             "user": {
@@ -224,7 +227,7 @@ class TestJSONOperations:
     async def test_json_get_array_element(self, mock_redis_connection_manager):
         """Test JSON get operation for array element."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.json.return_value.get.return_value = ["first_item"]
+        mock_redis.json.return_value.get = AsyncMock(return_value=["first_item"])
 
         result = await json_get("test_doc", "$.items[0]")
 
@@ -240,8 +243,8 @@ class TestJSONOperations:
     ):
         """Test JSON operations with numeric values."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.json.return_value.set.return_value = "OK"
-        mock_redis.json.return_value.get.return_value = [42]
+        mock_redis.json.return_value.set = AsyncMock(return_value="OK")
+        mock_redis.json.return_value.get = AsyncMock(return_value=[42])
 
         # Set numeric value
         await json_set("test_doc", "$.count", 42)
@@ -257,8 +260,8 @@ class TestJSONOperations:
     ):
         """Test JSON operations with boolean values."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.json.return_value.set.return_value = "OK"
-        mock_redis.json.return_value.get.return_value = [True]
+        mock_redis.json.return_value.set = AsyncMock(return_value="OK")
+        mock_redis.json.return_value.get = AsyncMock(return_value=[True])
 
         # Set boolean value
         await json_set("test_doc", "$.active", True)
@@ -274,8 +277,8 @@ class TestJSONOperations:
     async def test_json_set_expiration_error(self, mock_redis_connection_manager):
         """Test JSON set operation when expiration fails."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.json.return_value.set.return_value = "OK"
-        mock_redis.expire.side_effect = RedisError("Expire failed")
+        mock_redis.json.return_value.set = AsyncMock(return_value="OK")
+        mock_redis.expire = AsyncMock(side_effect=RedisError("Expire failed"))
 
         result = await json_set("test_doc", "$", {"key": "value"}, 60)
 
@@ -288,8 +291,8 @@ class TestJSONOperations:
     async def test_json_del_multiple_matches(self, mock_redis_connection_manager):
         """Test JSON delete operation that matches multiple elements."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.json.return_value.delete.return_value = (
-            3  # Multiple elements deleted
+        mock_redis.json.return_value.delete = AsyncMock(
+            return_value=3  # Multiple elements deleted
         )
 
         result = await json_del("test_doc", "$..name")
@@ -305,8 +308,8 @@ class TestJSONOperations:
     ):
         """Test JSON operations with null values."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.json.return_value.set.return_value = "OK"
-        mock_redis.json.return_value.get.return_value = [None]
+        mock_redis.json.return_value.set = AsyncMock(return_value="OK")
+        mock_redis.json.return_value.get = AsyncMock(return_value=[None])
 
         # Set null value
         await json_set("test_doc", "$.optional_field", None)

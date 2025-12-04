@@ -22,13 +22,13 @@ async def lpush(
         r = RedisConnectionManager.get_connection()
         if isinstance(value, list):
             vals = [json.dumps(v) if isinstance(v, dict) else v for v in value]
-            r.lpush(name, *reversed(vals))  # preserve input order left→right
+            await r.lpush(name, *reversed(vals))  # preserve input order left→right
         elif isinstance(value, dict):
-            r.lpush(name, json.dumps(value))
+            await r.lpush(name, json.dumps(value))
         else:
-            r.lpush(name, value)
+            await r.lpush(name, value)
         if expire:
-            r.expire(name, expire)
+            await r.expire(name, expire)
         return f"Value(s) '{value}' pushed to the left of list '{name}'."
     except RedisError as e:
         return f"Error pushing value(s) to list '{name}': {str(e)}"
@@ -49,13 +49,13 @@ async def rpush(
         r = RedisConnectionManager.get_connection()
         if isinstance(value, list):
             vals = [json.dumps(v) if isinstance(v, dict) else v for v in value]
-            r.rpush(name, *vals)
+            await r.rpush(name, *vals)
         elif isinstance(value, dict):
-            r.rpush(name, json.dumps(value))
+            await r.rpush(name, json.dumps(value))
         else:
-            r.rpush(name, value)
+            await r.rpush(name, value)
         if expire:
-            r.expire(name, expire)
+            await r.expire(name, expire)
         return f"Value(s) '{value}' pushed to the right of list '{name}'."
     except RedisError as e:
         return f"Error pushing value(s) to list '{name}': {str(e)}"
@@ -66,7 +66,7 @@ async def lpop(name: str) -> str:
     """Remove and return the first element from a Redis list."""
     try:
         r = RedisConnectionManager.get_connection()
-        value = r.lpop(name)
+        value = await r.lpop(name)
         return value if value else f"List '{name}' is empty or does not exist."
     except RedisError as e:
         return f"Error popping value from list '{name}': {str(e)}"
@@ -77,7 +77,7 @@ async def rpop(name: str) -> str:
     """Remove and return the last element from a Redis list."""
     try:
         r = RedisConnectionManager.get_connection()
-        value = r.rpop(name)
+        value = await r.rpop(name)
         return value if value else f"List '{name}' is empty or does not exist."
     except RedisError as e:
         return f"Error popping value from list '{name}': {str(e)}"
@@ -92,7 +92,7 @@ async def lrange(name: str, start: int, stop: int) -> Union[str, List[str]]:
     """
     try:
         r = RedisConnectionManager.get_connection()
-        values = r.lrange(name, start, stop)
+        values = await r.lrange(name, start, stop)
         if not values:
             return f"List '{name}' is empty or does not exist."
         else:
@@ -106,6 +106,6 @@ async def llen(name: str) -> int:
     """Get the length of a Redis list."""
     try:
         r = RedisConnectionManager.get_connection()
-        return r.llen(name)
+        return await r.llen(name)
     except RedisError as e:
         return f"Error retrieving length of list '{name}': {str(e)}"

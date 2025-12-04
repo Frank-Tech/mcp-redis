@@ -2,7 +2,6 @@ import json
 from typing import Union, Optional
 
 from redis.exceptions import RedisError
-from redis import Redis
 
 from src.common.connection import RedisConnectionManager
 from src.common.server import mcp
@@ -35,11 +34,11 @@ async def set(
         encoded_value = encoded_value.encode("utf-8")
 
     try:
-        r: Redis = RedisConnectionManager.get_connection()
+        r = RedisConnectionManager.get_connection()
         if expiration:
-            r.setex(key, expiration, encoded_value)
+            await r.setex(key, expiration, encoded_value)
         else:
-            r.set(key, encoded_value)
+            await r.set(key, encoded_value)
 
         return f"Successfully set {key}" + (
             f" with expiration {expiration} seconds" if expiration else ""
@@ -59,8 +58,8 @@ async def get(key: str) -> Union[str, bytes]:
         str, bytes: The stored value or an error message.
     """
     try:
-        r: Redis = RedisConnectionManager.get_connection()
-        value = r.get(key)
+        r = RedisConnectionManager.get_connection()
+        value = await r.get(key)
 
         if value is None:
             return f"Key {key} does not exist"
@@ -89,7 +88,7 @@ async def incr(key: str) -> str:
     """
     try:
         r = RedisConnectionManager.get_connection()
-        new_value = r.incr(key)
+        new_value = await r.incr(key)
         return f"Key {key} incremented to {new_value}"
     except RedisError as e:
         return f"Error incrementing key {key}: {str(e)}"
@@ -107,7 +106,7 @@ async def decr(key: str) -> str:
     """
     try:
         r = RedisConnectionManager.get_connection()
-        new_value = r.decr(key)
+        new_value = await r.decr(key)
         return f"Key {key} decremented to {new_value}"
     except RedisError as e:
         return f"Error decrementing key {key}: {str(e)}"
@@ -126,7 +125,7 @@ async def incrbyfloat(key: str, amount: float) -> str:
     """
     try:
         r = RedisConnectionManager.get_connection()
-        new_value = r.incrbyfloat(key, amount)
+        new_value = await r.incrbyfloat(key, amount)
         return f"Key {key} incremented by {amount}, new value: {new_value}"
     except RedisError as e:
         return f"Error incrementing key {key} by float: {str(e)}"
@@ -145,7 +144,7 @@ async def decrbyfloat(key: str, amount: float) -> str:
     """
     try:
         r = RedisConnectionManager.get_connection()
-        new_value = r.incrbyfloat(key, -amount)
+        new_value = await r.incrbyfloat(key, -amount)
         return f"Key {key} decremented by {amount}, new value: {new_value}"
     except RedisError as e:
         return f"Error decrementing key {key} by float: {str(e)}"

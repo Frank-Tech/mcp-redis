@@ -1,5 +1,6 @@
 import json
 from typing import Optional
+
 from redis.exceptions import RedisError
 
 from src.common.connection import RedisConnectionManager
@@ -8,10 +9,10 @@ from src.common.server import mcp
 
 @mcp.tool()
 async def json_set(
-    name: str,
-    path: str,
-    value: str,
-    expire_seconds: Optional[int] = None,
+        name: str,
+        path: str,
+        value: str,
+        expire_seconds: Optional[int] = None,
 ) -> str:
     """Set a JSON value in Redis at a given path with an optional expiration time.
 
@@ -32,10 +33,11 @@ async def json_set(
 
     try:
         r = RedisConnectionManager.get_connection()
-        r.json().set(name, path, parsed_value)
+        # In redis.asyncio, r.json() returns the accessor, .set() is the coroutine
+        await r.json().set(name, path, parsed_value)
 
         if expire_seconds is not None:
-            r.expire(name, expire_seconds)
+            await r.expire(name, expire_seconds)
 
         return f"JSON value set at path '{path}' in '{name}'." + (
             f" Expires in {expire_seconds} seconds." if expire_seconds else ""
@@ -57,7 +59,7 @@ async def json_get(name: str, path: str = "$") -> str:
     """
     try:
         r = RedisConnectionManager.get_connection()
-        value = r.json().get(name, path)
+        value = await r.json().get(name, path)
         if value is not None:
             # Convert the value to JSON string for consistent return type
             return json.dumps(value, ensure_ascii=False, indent=2)
@@ -80,7 +82,7 @@ async def json_del(name: str, path: str = "$") -> str:
     """
     try:
         r = RedisConnectionManager.get_connection()
-        deleted = r.json().delete(name, path)
+        deleted = await r.json().delete(name, path)
         return (
             f"Deleted JSON value at path '{path}' in '{name}'."
             if deleted

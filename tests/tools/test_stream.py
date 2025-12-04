@@ -2,7 +2,7 @@
 Unit tests for src/tools/stream.py
 """
 
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, patch, AsyncMock
 
 import pytest
 from redis.exceptions import RedisError
@@ -17,7 +17,7 @@ class TestStreamOperations:
     async def test_xadd_success(self, mock_redis_connection_manager):
         """Test successful stream add operation."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.xadd.return_value = "1234567890123-0"  # Stream entry ID
+        mock_redis.xadd = AsyncMock(return_value="1234567890123-0")  # Stream entry ID
 
         fields = {"field1": "value1", "field2": "value2"}
         result = await xadd("test_stream", fields)
@@ -30,8 +30,8 @@ class TestStreamOperations:
     async def test_xadd_with_expiration(self, mock_redis_connection_manager):
         """Test stream add operation with expiration."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.xadd.return_value = "1234567890124-0"
-        mock_redis.expire.return_value = True
+        mock_redis.xadd = AsyncMock(return_value="1234567890124-0")
+        mock_redis.expire = AsyncMock(return_value=True)
 
         fields = {"message": "test message"}
         result = await xadd("test_stream", fields, 60)
@@ -44,7 +44,7 @@ class TestStreamOperations:
     async def test_xadd_single_field(self, mock_redis_connection_manager):
         """Test stream add operation with single field."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.xadd.return_value = "1234567890125-0"
+        mock_redis.xadd = AsyncMock(return_value="1234567890125-0")
 
         fields = {"message": "single field message"}
         result = await xadd("test_stream", fields)
@@ -56,7 +56,7 @@ class TestStreamOperations:
     async def test_xadd_redis_error(self, mock_redis_connection_manager):
         """Test stream add operation with Redis error."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.xadd.side_effect = RedisError("Connection failed")
+        mock_redis.xadd = AsyncMock(side_effect=RedisError("Connection failed"))
 
         fields = {"field1": "value1"}
         result = await xadd("test_stream", fields)
@@ -67,7 +67,7 @@ class TestStreamOperations:
     async def test_xadd_with_numeric_values(self, mock_redis_connection_manager):
         """Test stream add operation with numeric field values."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.xadd.return_value = "1234567890126-0"
+        mock_redis.xadd = AsyncMock(return_value="1234567890126-0")
 
         fields = {"count": 42, "price": 19.99, "active": True}
         result = await xadd("test_stream", fields)
@@ -83,7 +83,7 @@ class TestStreamOperations:
             ("1234567890123-0", {"field1": "value1", "field2": "value2"}),
             ("1234567890124-0", {"field1": "value3", "field2": "value4"}),
         ]
-        mock_redis.xrange.return_value = mock_entries
+        mock_redis.xrange = AsyncMock(return_value=mock_entries)
 
         result = await xrange("test_stream")
 
@@ -99,7 +99,7 @@ class TestStreamOperations:
             ("1234567890124-0", {"message": "entry2"}),
             ("1234567890125-0", {"message": "entry3"}),
         ]
-        mock_redis.xrange.return_value = mock_entries
+        mock_redis.xrange = AsyncMock(return_value=mock_entries)
 
         result = await xrange("test_stream", 3)
 
@@ -112,7 +112,7 @@ class TestStreamOperations:
     async def test_xrange_empty_stream(self, mock_redis_connection_manager):
         """Test stream range operation on empty stream."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.xrange.return_value = []
+        mock_redis.xrange = AsyncMock(return_value=[])
 
         result = await xrange("empty_stream")
 
@@ -122,7 +122,7 @@ class TestStreamOperations:
     async def test_xrange_redis_error(self, mock_redis_connection_manager):
         """Test stream range operation with Redis error."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.xrange.side_effect = RedisError("Connection failed")
+        mock_redis.xrange = AsyncMock(side_effect=RedisError("Connection failed"))
 
         result = await xrange("test_stream")
 
@@ -132,7 +132,7 @@ class TestStreamOperations:
     async def test_xdel_success(self, mock_redis_connection_manager):
         """Test successful stream delete operation."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.xdel.return_value = 1  # Number of entries deleted
+        mock_redis.xdel = AsyncMock(return_value=1)  # Number of entries deleted
 
         result = await xdel("test_stream", "1234567890123-0")
 
@@ -143,7 +143,7 @@ class TestStreamOperations:
     async def test_xdel_entry_not_found(self, mock_redis_connection_manager):
         """Test stream delete operation when entry doesn't exist."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.xdel.return_value = 0  # No entries deleted
+        mock_redis.xdel = AsyncMock(return_value=0)  # No entries deleted
 
         result = await xdel("test_stream", "nonexistent-entry-id")
 
@@ -153,7 +153,7 @@ class TestStreamOperations:
     async def test_xdel_redis_error(self, mock_redis_connection_manager):
         """Test stream delete operation with Redis error."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.xdel.side_effect = RedisError("Connection failed")
+        mock_redis.xdel = AsyncMock(side_effect=RedisError("Connection failed"))
 
         result = await xdel("test_stream", "1234567890123-0")
 
@@ -163,7 +163,7 @@ class TestStreamOperations:
     async def test_xadd_with_empty_fields(self, mock_redis_connection_manager):
         """Test stream add operation with empty fields dictionary."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.xadd.return_value = "1234567890127-0"
+        mock_redis.xadd = AsyncMock(return_value="1234567890127-0")
 
         fields = {}
         result = await xadd("test_stream", fields)
@@ -175,7 +175,7 @@ class TestStreamOperations:
     async def test_xadd_with_unicode_values(self, mock_redis_connection_manager):
         """Test stream add operation with unicode field values."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.xadd.return_value = "1234567890128-0"
+        mock_redis.xadd = AsyncMock(return_value="1234567890128-0")
 
         fields = {"message": "Hello 世界 🌍", "user": "测试用户"}
         result = await xadd("test_stream", fields)
@@ -190,7 +190,7 @@ class TestStreamOperations:
         mock_entries = [
             (f"123456789012{i}-0", {"data": f"entry_{i}"}) for i in range(100)
         ]
-        mock_redis.xrange.return_value = mock_entries
+        mock_redis.xrange = AsyncMock(return_value=mock_entries)
 
         result = await xrange("test_stream", 100)
 
@@ -204,7 +204,7 @@ class TestStreamOperations:
     async def test_xdel_multiple_entries_behavior(self, mock_redis_connection_manager):
         """Test that xdel function handles single entry correctly."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.xdel.return_value = 1
+        mock_redis.xdel = AsyncMock(return_value=1)
 
         result = await xdel("test_stream", "single-entry-id")
 
@@ -216,8 +216,8 @@ class TestStreamOperations:
     async def test_xadd_expiration_error(self, mock_redis_connection_manager):
         """Test stream add operation when expiration fails."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.xadd.return_value = "1234567890129-0"
-        mock_redis.expire.side_effect = RedisError("Expire failed")
+        mock_redis.xadd = AsyncMock(return_value="1234567890129-0")
+        mock_redis.expire = AsyncMock(side_effect=RedisError("Expire failed"))
 
         fields = {"message": "test"}
         result = await xadd("test_stream", fields, 60)
@@ -229,7 +229,7 @@ class TestStreamOperations:
         """Test stream range operation returning single entry."""
         mock_redis = mock_redis_connection_manager
         mock_entries = [("1234567890123-0", {"single": "entry"})]
-        mock_redis.xrange.return_value = mock_entries
+        mock_redis.xrange = AsyncMock(return_value=mock_entries)
 
         result = await xrange("test_stream", 1)
 
@@ -244,7 +244,7 @@ class TestStreamOperations:
             "src.tools.stream.RedisConnectionManager.get_connection"
         ) as mock_get_conn:
             mock_redis = Mock()
-            mock_redis.xadd.return_value = "1234567890123-0"
+            mock_redis.xadd = AsyncMock(return_value="1234567890123-0")
             mock_get_conn.return_value = mock_redis
 
             await xadd("test_stream", {"field": "value"})
@@ -277,7 +277,7 @@ class TestStreamOperations:
     async def test_xadd_with_complex_fields(self, mock_redis_connection_manager):
         """Test stream add operation with complex field structure."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.xadd.return_value = "1234567890130-0"
+        mock_redis.xadd = AsyncMock(return_value="1234567890130-0")
 
         fields = {
             "event_type": "user_action",

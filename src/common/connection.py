@@ -1,9 +1,10 @@
 import logging
 from typing import Optional, Type, Union
 
-import redis
-from redis import Redis
-from redis.cluster import RedisCluster
+import redis.asyncio as redis
+from redis import exceptions as redis_exceptions
+from redis.asyncio import Redis
+from redis.asyncio.cluster import RedisCluster
 
 from src.common.config import REDIS_CFG, is_entraid_auth_enabled
 from src.common.entraid_auth import (
@@ -34,9 +35,8 @@ class RedisConnectionManager:
                         raise
 
                 if REDIS_CFG["cluster_mode"]:
-                    redis_class: Type[Union[Redis, RedisCluster]] = (
-                        redis.cluster.RedisCluster
-                    )
+                    redis_class: Type[Union[Redis, RedisCluster]] = RedisCluster
+
                     connection_params = {
                         "host": REDIS_CFG["host"],
                         "port": REDIS_CFG["port"],
@@ -49,7 +49,7 @@ class RedisConnectionManager:
                         "ssl_cert_reqs": REDIS_CFG["ssl_cert_reqs"],
                         "ssl_ca_certs": REDIS_CFG["ssl_ca_certs"],
                         "decode_responses": decode_responses,
-                        "lib_name": f"redis-py(mcp-server_v{__version__})",
+                        "lib_name": f"redis-py-async(mcp-server_v{__version__})",  # Updated lib name
                         "max_connections_per_node": 10,
                     }
 
@@ -73,7 +73,7 @@ class RedisConnectionManager:
                         "ssl_cert_reqs": REDIS_CFG["ssl_cert_reqs"],
                         "ssl_ca_certs": REDIS_CFG["ssl_ca_certs"],
                         "decode_responses": decode_responses,
-                        "lib_name": f"redis-py(mcp-server_v{__version__})",
+                        "lib_name": f"redis-py-async(mcp-server_v{__version__})",  # Updated lib name
                         "max_connections": 10,
                     }
 
@@ -85,22 +85,22 @@ class RedisConnectionManager:
 
                 cls._instance = redis_class(**connection_params)
 
-            except redis.exceptions.ConnectionError:
+            except redis_exceptions.ConnectionError:
                 _logger.error("Failed to connect to Redis server")
                 raise
-            except redis.exceptions.AuthenticationError:
+            except redis_exceptions.AuthenticationError:
                 _logger.error("Authentication failed")
                 raise
-            except redis.exceptions.TimeoutError:
+            except redis_exceptions.TimeoutError:
                 _logger.error("Connection timed out")
                 raise
-            except redis.exceptions.ResponseError as e:
+            except redis_exceptions.ResponseError as e:
                 _logger.error("Response error: %s", e)
                 raise
-            except redis.exceptions.RedisError as e:
+            except redis_exceptions.RedisError as e:
                 _logger.error("Redis error: %s", e)
                 raise
-            except redis.exceptions.ClusterError as e:
+            except redis_exceptions.ClusterError as e:
                 _logger.error("Redis Cluster error: %s", e)
                 raise
             except Exception as e:

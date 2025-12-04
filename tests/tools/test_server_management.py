@@ -3,6 +3,7 @@ Unit tests for src/tools/server_management.py
 """
 
 import pytest
+from unittest.mock import AsyncMock
 from redis.exceptions import ConnectionError, RedisError
 
 from src.tools.server_management import client_list, dbsize, info
@@ -15,7 +16,7 @@ class TestServerManagementOperations:
     async def test_dbsize_success(self, mock_redis_connection_manager):
         """Test successful database size operation."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.dbsize.return_value = 1000
+        mock_redis.dbsize = AsyncMock(return_value=1000)
 
         result = await dbsize()
 
@@ -26,7 +27,7 @@ class TestServerManagementOperations:
     async def test_dbsize_zero_keys(self, mock_redis_connection_manager):
         """Test database size operation with empty database."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.dbsize.return_value = 0
+        mock_redis.dbsize = AsyncMock(return_value=0)
 
         result = await dbsize()
 
@@ -36,7 +37,7 @@ class TestServerManagementOperations:
     async def test_dbsize_redis_error(self, mock_redis_connection_manager):
         """Test database size operation with Redis error."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.dbsize.side_effect = RedisError("Connection failed")
+        mock_redis.dbsize = AsyncMock(side_effect=RedisError("Connection failed"))
 
         result = await dbsize()
 
@@ -52,7 +53,7 @@ class TestServerManagementOperations:
             "connected_clients": "5",
             "total_commands_processed": "1000",
         }
-        mock_redis.info.return_value = mock_info
+        mock_redis.info = AsyncMock(return_value=mock_info)
 
         result = await info()
 
@@ -69,7 +70,7 @@ class TestServerManagementOperations:
             "used_memory_peak": "3072000",
             "used_memory_peak_human": "3.00M",
         }
-        mock_redis.info.return_value = mock_memory_info
+        mock_redis.info = AsyncMock(return_value=mock_memory_info)
 
         result = await info("memory")
 
@@ -87,7 +88,7 @@ class TestServerManagementOperations:
             "keyspace_hits": "500",
             "keyspace_misses": "100",
         }
-        mock_redis.info.return_value = mock_all_info
+        mock_redis.info = AsyncMock(return_value=mock_all_info)
 
         result = await info("all")
 
@@ -98,7 +99,7 @@ class TestServerManagementOperations:
     async def test_info_redis_error(self, mock_redis_connection_manager):
         """Test info operation with Redis error."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.info.side_effect = RedisError("Connection failed")
+        mock_redis.info = AsyncMock(side_effect=RedisError("Connection failed"))
 
         result = await info("server")
 
@@ -108,7 +109,7 @@ class TestServerManagementOperations:
     async def test_info_invalid_section(self, mock_redis_connection_manager):
         """Test info operation with invalid section."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.info.side_effect = RedisError("Unknown section")
+        mock_redis.info = AsyncMock(side_effect=RedisError("Unknown section"))
 
         result = await info("invalid_section")
 
@@ -158,7 +159,7 @@ class TestServerManagementOperations:
                 "cmd": "get",
             },
         ]
-        mock_redis.client_list.return_value = mock_clients
+        mock_redis.client_list = AsyncMock(return_value=mock_clients)
 
         result = await client_list()
 
@@ -172,7 +173,7 @@ class TestServerManagementOperations:
     async def test_client_list_empty(self, mock_redis_connection_manager):
         """Test client list operation with no clients."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.client_list.return_value = []
+        mock_redis.client_list = AsyncMock(return_value=[])
 
         result = await client_list()
 
@@ -182,7 +183,7 @@ class TestServerManagementOperations:
     async def test_client_list_redis_error(self, mock_redis_connection_manager):
         """Test client list operation with Redis error."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.client_list.side_effect = RedisError("Connection failed")
+        mock_redis.client_list = AsyncMock(side_effect=RedisError("Connection failed"))
 
         result = await client_list()
 
@@ -192,7 +193,7 @@ class TestServerManagementOperations:
     async def test_client_list_connection_error(self, mock_redis_connection_manager):
         """Test client list operation with connection error."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.client_list.side_effect = ConnectionError("Redis server unavailable")
+        mock_redis.client_list = AsyncMock(side_effect=ConnectionError("Redis server unavailable"))
 
         result = await client_list()
 
@@ -222,7 +223,7 @@ class TestServerManagementOperations:
             "pubsub_patterns": "0",
             "latest_fork_usec": "0",
         }
-        mock_redis.info.return_value = mock_stats_info
+        mock_redis.info = AsyncMock(return_value=mock_stats_info)
 
         result = await info("stats")
 
@@ -247,7 +248,7 @@ class TestServerManagementOperations:
             "repl_backlog_first_byte_offset": "1",
             "repl_backlog_histlen": "1000",
         }
-        mock_redis.info.return_value = mock_replication_info
+        mock_redis.info = AsyncMock(return_value=mock_replication_info)
 
         result = await info("replication")
 
@@ -260,7 +261,7 @@ class TestServerManagementOperations:
     async def test_dbsize_large_number(self, mock_redis_connection_manager):
         """Test database size operation with large number of keys."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.dbsize.return_value = 1000000  # 1 million keys
+        mock_redis.dbsize = AsyncMock(return_value=1000000)  # 1 million keys
 
         result = await dbsize()
 
@@ -291,7 +292,7 @@ class TestServerManagementOperations:
                 "cmd": "ping",
             }
         ]
-        mock_redis.client_list.return_value = mock_clients
+        mock_redis.client_list = AsyncMock(return_value=mock_clients)
 
         result = await client_list()
 

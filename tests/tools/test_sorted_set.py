@@ -2,7 +2,7 @@
 Unit tests for src/tools/sorted_set.py
 """
 
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, patch, AsyncMock
 
 import pytest
 from redis.exceptions import RedisError
@@ -17,7 +17,7 @@ class TestSortedSetOperations:
     async def test_zadd_success(self, mock_redis_connection_manager):
         """Test successful sorted set add operation."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.zadd.return_value = 1  # Number of elements added
+        mock_redis.zadd = AsyncMock(return_value=1)  # Number of elements added
 
         result = await zadd("test_zset", 1.5, "member1")
 
@@ -28,8 +28,8 @@ class TestSortedSetOperations:
     async def test_zadd_with_expiration(self, mock_redis_connection_manager):
         """Test sorted set add operation with expiration."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.zadd.return_value = 1
-        mock_redis.expire.return_value = True
+        mock_redis.zadd = AsyncMock(return_value=1)
+        mock_redis.expire = AsyncMock(return_value=True)
 
         result = await zadd("test_zset", 2.0, "member1", 60)
 
@@ -41,7 +41,7 @@ class TestSortedSetOperations:
     async def test_zadd_member_updated(self, mock_redis_connection_manager):
         """Test sorted set add operation when member score is updated."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.zadd.return_value = 0  # Member already exists, score updated
+        mock_redis.zadd = AsyncMock(return_value=0)  # Member already exists, score updated
 
         result = await zadd("test_zset", 3.0, "existing_member")
 
@@ -53,7 +53,7 @@ class TestSortedSetOperations:
     async def test_zadd_redis_error(self, mock_redis_connection_manager):
         """Test sorted set add operation with Redis error."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.zadd.side_effect = RedisError("Connection failed")
+        mock_redis.zadd = AsyncMock(side_effect=RedisError("Connection failed"))
 
         result = await zadd("test_zset", 1.0, "member1")
 
@@ -63,7 +63,7 @@ class TestSortedSetOperations:
     async def test_zadd_integer_score(self, mock_redis_connection_manager):
         """Test sorted set add operation with integer score."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.zadd.return_value = 1
+        mock_redis.zadd = AsyncMock(return_value=1)
 
         result = await zadd("test_zset", 5, "member1")
 
@@ -74,7 +74,7 @@ class TestSortedSetOperations:
     async def test_zrange_success_without_scores(self, mock_redis_connection_manager):
         """Test successful sorted set range operation without scores."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.zrange.return_value = ["member1", "member2", "member3"]
+        mock_redis.zrange = AsyncMock(return_value=["member1", "member2", "member3"])
 
         result = await zrange("test_zset", 0, 2)
 
@@ -85,11 +85,11 @@ class TestSortedSetOperations:
     async def test_zrange_success_with_scores(self, mock_redis_connection_manager):
         """Test successful sorted set range operation with scores."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.zrange.return_value = [
+        mock_redis.zrange = AsyncMock(return_value=[
             ("member1", 1.0),
             ("member2", 2.0),
             ("member3", 3.0),
-        ]
+        ])
 
         result = await zrange("test_zset", 0, 2, True)
 
@@ -100,7 +100,7 @@ class TestSortedSetOperations:
     async def test_zrange_default_parameters(self, mock_redis_connection_manager):
         """Test sorted set range operation with default parameters."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.zrange.return_value = ["member1", "member2"]
+        mock_redis.zrange = AsyncMock(return_value=["member1", "member2"])
 
         result = await zrange("test_zset", 0, -1)
 
@@ -111,7 +111,7 @@ class TestSortedSetOperations:
     async def test_zrange_empty_set(self, mock_redis_connection_manager):
         """Test sorted set range operation on empty set."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.zrange.return_value = []
+        mock_redis.zrange = AsyncMock(return_value=[])
 
         result = await zrange("empty_zset", 0, -1)
 
@@ -122,7 +122,7 @@ class TestSortedSetOperations:
     async def test_zrange_redis_error(self, mock_redis_connection_manager):
         """Test sorted set range operation with Redis error."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.zrange.side_effect = RedisError("Connection failed")
+        mock_redis.zrange = AsyncMock(side_effect=RedisError("Connection failed"))
 
         result = await zrange("test_zset", 0, -1)
 
@@ -132,7 +132,7 @@ class TestSortedSetOperations:
     async def test_zrem_success(self, mock_redis_connection_manager):
         """Test successful sorted set remove operation."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.zrem.return_value = 1  # Number of elements removed
+        mock_redis.zrem = AsyncMock(return_value=1)  # Number of elements removed
 
         result = await zrem("test_zset", "member1")
 
@@ -143,7 +143,7 @@ class TestSortedSetOperations:
     async def test_zrem_member_not_exists(self, mock_redis_connection_manager):
         """Test sorted set remove operation when member doesn't exist."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.zrem.return_value = 0  # Member doesn't exist
+        mock_redis.zrem = AsyncMock(return_value=0)  # Member doesn't exist
 
         result = await zrem("test_zset", "nonexistent_member")
 
@@ -153,7 +153,7 @@ class TestSortedSetOperations:
     async def test_zrem_redis_error(self, mock_redis_connection_manager):
         """Test sorted set remove operation with Redis error."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.zrem.side_effect = RedisError("Connection failed")
+        mock_redis.zrem = AsyncMock(side_effect=RedisError("Connection failed"))
 
         result = await zrem("test_zset", "member1")
 
@@ -163,7 +163,7 @@ class TestSortedSetOperations:
     async def test_zadd_negative_score(self, mock_redis_connection_manager):
         """Test sorted set add operation with negative score."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.zadd.return_value = 1
+        mock_redis.zadd = AsyncMock(return_value=1)
 
         result = await zadd("test_zset", -1.5, "negative_member")
 
@@ -176,7 +176,7 @@ class TestSortedSetOperations:
     async def test_zadd_zero_score(self, mock_redis_connection_manager):
         """Test sorted set add operation with zero score."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.zadd.return_value = 1
+        mock_redis.zadd = AsyncMock(return_value=1)
 
         result = await zadd("test_zset", 0, "zero_member")
 
@@ -187,7 +187,7 @@ class TestSortedSetOperations:
     async def test_zrange_negative_indices(self, mock_redis_connection_manager):
         """Test sorted set range operation with negative indices."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.zrange.return_value = ["last_member"]
+        mock_redis.zrange = AsyncMock(return_value=["last_member"])
 
         result = await zrange("test_zset", -1, -1)
 
@@ -198,8 +198,8 @@ class TestSortedSetOperations:
     async def test_zadd_expiration_error(self, mock_redis_connection_manager):
         """Test sorted set add operation when expiration fails."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.zadd.return_value = 1
-        mock_redis.expire.side_effect = RedisError("Expire failed")
+        mock_redis.zadd = AsyncMock(return_value=1)
+        mock_redis.expire = AsyncMock(side_effect=RedisError("Expire failed"))
 
         result = await zadd("test_zset", 1.0, "member1", 60)
 
@@ -209,7 +209,7 @@ class TestSortedSetOperations:
     async def test_zadd_with_unicode_member(self, mock_redis_connection_manager):
         """Test sorted set add operation with unicode member."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.zadd.return_value = 1
+        mock_redis.zadd = AsyncMock(return_value=1)
 
         unicode_member = "测试成员 🚀"
         result = await zadd("test_zset", 1.0, unicode_member)
@@ -224,7 +224,7 @@ class TestSortedSetOperations:
         """Test sorted set range operation with large range."""
         mock_redis = mock_redis_connection_manager
         large_result = [f"member_{i}" for i in range(1000)]
-        mock_redis.zrange.return_value = large_result
+        mock_redis.zrange = AsyncMock(return_value=large_result)
 
         result = await zrange("large_zset", 0, 999)
 
@@ -240,7 +240,7 @@ class TestSortedSetOperations:
             "src.tools.sorted_set.RedisConnectionManager.get_connection"
         ) as mock_get_conn:
             mock_redis = Mock()
-            mock_redis.zadd.return_value = 1
+            mock_redis.zadd = AsyncMock(return_value=1)
             mock_get_conn.return_value = mock_redis
 
             await zadd("test_zset", 1.0, "member1")

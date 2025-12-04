@@ -22,9 +22,9 @@ async def xadd(
     """
     try:
         r = RedisConnectionManager.get_connection()
-        entry_id = r.xadd(key, fields)
+        entry_id = await r.xadd(key, fields)
         if expiration:
-            r.expire(key, expiration)
+            await r.expire(key, expiration)
         return f"Successfully added entry {entry_id} to {key}" + (
             f" with expiration {expiration} seconds" if expiration else ""
         )
@@ -45,7 +45,7 @@ async def xrange(key: str, count: int = 1) -> str:
     """
     try:
         r = RedisConnectionManager.get_connection()
-        entries = r.xrange(key, count=count)
+        entries = await r.xrange(key, count=count)
         return str(entries) if entries else f"Stream {key} is empty or does not exist"
     except RedisError as e:
         return f"Error reading from stream {key}: {str(e)}"
@@ -64,7 +64,7 @@ async def xdel(key: str, entry_id: str) -> str:
     """
     try:
         r = RedisConnectionManager.get_connection()
-        result = r.xdel(key, entry_id)
+        result = await r.xdel(key, entry_id)
         return (
             f"Successfully deleted entry {entry_id} from {key}"
             if result

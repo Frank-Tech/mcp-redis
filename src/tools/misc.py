@@ -26,7 +26,7 @@ async def delete(keys: Union[str, List[str]]) -> str:
         if isinstance(keys, str):
             keys = [keys]
 
-        result = r.delete(*keys)
+        result = await r.delete(*keys)
         if result > 0:
             return f"Successfully deleted {result} key(s): {', '.join(keys)}"
         else:
@@ -47,8 +47,9 @@ async def type(key: str) -> Dict[str, Any]:
     """
     try:
         r = RedisConnectionManager.get_connection()
-        key_type = r.type(key)
-        info = {"key": key, "type": key_type, "ttl": r.ttl(key)}
+        key_type = await r.type(key)
+        ttl = await r.ttl(key)
+        info = {"key": key, "type": key_type, "ttl": ttl}
 
         return info
     except RedisError as e:
@@ -68,7 +69,7 @@ async def expire(name: str, expire_seconds: int) -> str:
     """
     try:
         r = RedisConnectionManager.get_connection()
-        success = r.expire(name, expire_seconds)
+        success = await r.expire(name, expire_seconds)
         return (
             f"Expiration set to {expire_seconds} seconds for '{name}'."
             if success
@@ -96,11 +97,11 @@ async def rename(old_key: str, new_key: str) -> Dict[str, Any]:
         r = RedisConnectionManager.get_connection()
 
         # Check if the old key exists
-        if not r.exists(old_key):
+        if not await r.exists(old_key):
             return {"error": f"Key '{old_key}' does not exist."}
 
         # Rename the key
-        r.rename(old_key, new_key)
+        await r.rename(old_key, new_key)
         return {
             "status": "success",
             "message": f"Renamed key '{old_key}' to '{new_key}'",
@@ -147,7 +148,7 @@ async def scan_keys(
     """
     try:
         r = RedisConnectionManager.get_connection()
-        cursor, keys = r.scan(cursor=cursor, match=pattern, count=count)
+        cursor, keys = await r.scan(cursor=cursor, match=pattern, count=count)
 
         # Convert bytes to strings if needed
         decoded_keys = [
@@ -190,7 +191,7 @@ async def scan_all_keys(
         cursor = 0
 
         while True:
-            cursor, keys = r.scan(cursor=cursor, match=pattern, count=batch_size)
+            cursor, keys = await r.scan(cursor=cursor, match=pattern, count=batch_size)
 
             # Convert bytes to strings if needed and add to results
             decoded_keys = [

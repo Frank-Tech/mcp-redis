@@ -58,8 +58,9 @@ class TestRedisConnectionManager:
         assert call_args["decode_responses"] is True
         assert call_args["max_connections"] == 10
         assert "lib_name" in call_args
+        assert "redis-py-async" in call_args["lib_name"]
 
-    @patch("src.common.connection.redis.cluster.RedisCluster")
+    @patch("src.common.connection.RedisCluster")
     @patch("src.common.connection.REDIS_CFG")
     def test_get_connection_cluster_mode(self, mock_config, mock_cluster_class):
         """Test getting connection in cluster mode."""
@@ -96,6 +97,7 @@ class TestRedisConnectionManager:
         assert call_args["decode_responses"] is True
         assert call_args["max_connections_per_node"] == 10
         assert "lib_name" in call_args
+        assert "redis-py-async" in call_args["lib_name"]
 
     @patch("src.common.connection.redis.Redis")
     @patch("src.common.connection.REDIS_CFG")
@@ -222,7 +224,7 @@ class TestRedisConnectionManager:
             assert connection == mock_redis_instance
 
             call_args = mock_redis_class.call_args[1]
-            assert "redis-py(mcp-server_v1.0.0)" in call_args["lib_name"]
+            assert "redis-py-async(mcp-server_v1.0.0)" in call_args["lib_name"]
 
     @patch("src.common.connection.redis.Redis")
     @patch("src.common.connection.REDIS_CFG")
@@ -249,7 +251,7 @@ class TestRedisConnectionManager:
         with pytest.raises(ConnectionError, match="Connection refused"):
             RedisConnectionManager.get_connection()
 
-    @patch("src.common.connection.redis.cluster.RedisCluster")
+    @patch("src.common.connection.RedisCluster")
     @patch("src.common.connection.REDIS_CFG")
     def test_cluster_connection_error_handling(self, mock_config, mock_cluster_class):
         """Test cluster connection error handling."""

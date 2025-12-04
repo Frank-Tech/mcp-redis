@@ -2,34 +2,35 @@
 Pytest configuration and fixtures for Redis MCP Server tests.
 """
 
-from unittest.mock import Mock, patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
-import redis
+import redis.asyncio as redis
+from redis.asyncio.cluster import RedisCluster
 from redis.exceptions import ConnectionError, RedisError, TimeoutError
 
 
 @pytest.fixture
 def mock_redis():
-    """Create a mock Redis connection."""
-    mock = Mock(spec=redis.Redis)
+    """Create a mock Async Redis connection."""
+    mock = AsyncMock(spec=redis.Redis)
     return mock
 
 
 @pytest.fixture
 def mock_redis_cluster():
-    """Create a mock Redis Cluster connection."""
-    mock = Mock(spec=redis.cluster.RedisCluster)
+    """Create a mock Async Redis Cluster connection."""
+    mock = AsyncMock(spec=RedisCluster)
     return mock
 
 
 @pytest.fixture
 def mock_redis_connection_manager():
-    """Mock the RedisConnectionManager to return a mock Redis connection."""
+    """Mock the RedisConnectionManager to return a mock Async Redis connection."""
     with patch(
         "src.common.connection.RedisConnectionManager.get_connection"
     ) as mock_get_conn:
-        mock_redis = Mock(spec=redis.Redis)
+        mock_redis = AsyncMock(spec=redis.Redis)
         mock_get_conn.return_value = mock_redis
         yield mock_redis
 
