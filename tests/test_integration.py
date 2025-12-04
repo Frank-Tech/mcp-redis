@@ -216,6 +216,7 @@ class TestMCPServerIntegration:
             "rename",
             "scan_keys",
             "scan_all_keys",
+            "search_redis_documents",
             "publish",
             "subscribe",
             "unsubscribe",
@@ -272,7 +273,7 @@ class TestMCPServerIntegration:
         tool_names = [tool["name"] for tool in tools]
 
         # Expected tool count (based on @mcp.tool() decorators in codebase)
-        expected_tool_count = 48
+        expected_tool_count = 49
         assert len(tools) == expected_tool_count, (
             f"Expected {expected_tool_count} tools, but got {len(tools)}"
         )
@@ -309,6 +310,7 @@ class TestMCPServerIntegration:
             "sadd",
             "scan_all_keys",
             "scan_keys",
+            "search_redis_documents",
             "set",
             "set_vector_in_hash",
             "smembers",
