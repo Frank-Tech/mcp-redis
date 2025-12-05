@@ -48,7 +48,9 @@ class TestRedisQueryEngineOperations:
     async def test_get_indexes_redis_error(self, mock_redis_connection_manager):
         """Test get indexes operation with Redis error."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.execute_command = AsyncMock(side_effect=RedisError("Search module not loaded"))
+        mock_redis.execute_command = AsyncMock(
+            side_effect=RedisError("Search module not loaded")
+        )
 
         result = await get_indexes()
 

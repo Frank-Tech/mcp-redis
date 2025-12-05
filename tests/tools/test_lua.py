@@ -32,7 +32,9 @@ class TestLuaOperations:
         result = await eval_script(script, keys, args)
 
         # verify (script, numkeys, *keys, *args)
-        mock_redis.eval.assert_called_once_with(script, 2, "key1", "key2", "arg1", "arg2")
+        mock_redis.eval.assert_called_once_with(
+            script, 2, "key1", "key2", "arg1", "arg2"
+        )
         assert result == "result"
 
     async def test_eval_script_redis_error(self, mock_redis_connection_manager):
@@ -152,12 +154,7 @@ class TestLuaOperations:
         mock_redis = mock_redis_connection_manager
 
         # Structure: List containing bytes, int, and a nested list/dict
-        complex_response = [
-            b"string",
-            123,
-            [b"nested"],
-            {b"key": b"value"}
-        ]
+        complex_response = [b"string", 123, [b"nested"], {b"key": b"value"}]
 
         mock_redis.eval = AsyncMock(return_value=complex_response)
 

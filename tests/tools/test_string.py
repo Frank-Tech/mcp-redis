@@ -50,7 +50,9 @@ class TestStringOperations:
     async def test_set_connection_error(self, mock_redis_connection_manager):
         """Test string set operation with connection error."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.set = AsyncMock(side_effect=ConnectionError("Redis server unavailable"))
+        mock_redis.set = AsyncMock(
+            side_effect=ConnectionError("Redis server unavailable")
+        )
 
         result = await set("test_key", "test_value")
 

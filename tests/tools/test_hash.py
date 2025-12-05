@@ -118,7 +118,9 @@ class TestHashOperations:
     async def test_hgetall_success(self, mock_redis_connection_manager):
         """Test successful hash get all operation."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.hgetall = AsyncMock(return_value={"field1": "value1", "field2": "value2"})
+        mock_redis.hgetall = AsyncMock(
+            return_value={"field1": "value1", "field2": "value2"}
+        )
 
         result = await hgetall("test_hash")
 

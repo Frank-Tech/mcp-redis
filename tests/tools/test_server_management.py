@@ -193,7 +193,9 @@ class TestServerManagementOperations:
     async def test_client_list_connection_error(self, mock_redis_connection_manager):
         """Test client list operation with connection error."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.client_list = AsyncMock(side_effect=ConnectionError("Redis server unavailable"))
+        mock_redis.client_list = AsyncMock(
+            side_effect=ConnectionError("Redis server unavailable")
+        )
 
         result = await client_list()
 

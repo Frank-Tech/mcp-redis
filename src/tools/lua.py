@@ -13,18 +13,13 @@ def _recursive_decode(data: Any) -> Any:
     if isinstance(data, list):
         return [_recursive_decode(item) for item in data]
     if isinstance(data, dict):
-        return {
-            _recursive_decode(k): _recursive_decode(v)
-            for k, v in data.items()
-        }
+        return {_recursive_decode(k): _recursive_decode(v) for k, v in data.items()}
     return data
 
 
 @mcp.tool()
 async def eval_script(
-        script: str,
-        keys: List[str],
-        args: List[str]
+    script: str, keys: List[str], args: List[str]
 ) -> Union[str, int, List[Any], None]:
     """Execute a Lua script on the Redis server.
 
@@ -68,9 +63,7 @@ async def script_load(script: str) -> str:
 
 @mcp.tool()
 async def evalsha_script(
-        sha: str,
-        keys: List[str],
-        args: List[str]
+    sha: str, keys: List[str], args: List[str]
 ) -> Union[str, int, List[Any], None]:
     """Execute a Lua script by its SHA1 digest.
 

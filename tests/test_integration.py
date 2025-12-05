@@ -247,7 +247,7 @@ class TestMCPServerIntegration:
             "script_load",
             "evalsha_script",
             "script_exists",
-            "script_flush"
+            "script_flush",
         ]
         for tool in tool_names:
             assert tool in expected_tools, (
@@ -338,7 +338,7 @@ class TestMCPServerIntegration:
             "script_load",
             "evalsha_script",
             "script_exists",
-            "script_flush"
+            "script_flush",
         ]
 
         # Verify all expected tools are present
@@ -381,8 +381,8 @@ class TestMCPServerIntegration:
                 "script_load",
                 "evalsha_script",
                 "script_exists",
-                "script_flush"
-            ]
+                "script_flush",
+            ],
         }
 
         for category, category_tools in tool_categories.items():

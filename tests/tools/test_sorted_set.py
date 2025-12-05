@@ -41,7 +41,9 @@ class TestSortedSetOperations:
     async def test_zadd_member_updated(self, mock_redis_connection_manager):
         """Test sorted set add operation when member score is updated."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.zadd = AsyncMock(return_value=0)  # Member already exists, score updated
+        mock_redis.zadd = AsyncMock(
+            return_value=0
+        )  # Member already exists, score updated
 
         result = await zadd("test_zset", 3.0, "existing_member")
 
@@ -85,11 +87,13 @@ class TestSortedSetOperations:
     async def test_zrange_success_with_scores(self, mock_redis_connection_manager):
         """Test successful sorted set range operation with scores."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.zrange = AsyncMock(return_value=[
-            ("member1", 1.0),
-            ("member2", 2.0),
-            ("member3", 3.0),
-        ])
+        mock_redis.zrange = AsyncMock(
+            return_value=[
+                ("member1", 1.0),
+                ("member2", 2.0),
+                ("member3", 3.0),
+            ]
+        )
 
         result = await zrange("test_zset", 0, 2, True)
 

@@ -18,7 +18,7 @@ class TestPubSubOperations:
         """Test successful publish operation."""
         mock_redis = mock_redis_connection_manager
         mock_redis.publish = AsyncMock(
-            return_value=2 # Number of subscribers that received the message
+            return_value=2  # Number of subscribers that received the message
         )
 
         result = await publish("test_channel", "Hello World")
@@ -30,7 +30,7 @@ class TestPubSubOperations:
     async def test_publish_no_subscribers(self, mock_redis_connection_manager):
         """Test publish operation with no subscribers."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.publish = AsyncMock(return_value=0) # No subscribers
+        mock_redis.publish = AsyncMock(return_value=0)  # No subscribers
 
         result = await publish("empty_channel", "Hello World")
 
@@ -54,7 +54,9 @@ class TestPubSubOperations:
     async def test_publish_connection_error(self, mock_redis_connection_manager):
         """Test publish operation with connection error."""
         mock_redis = mock_redis_connection_manager
-        mock_redis.publish = AsyncMock(side_effect=ConnectionError("Redis server unavailable"))
+        mock_redis.publish = AsyncMock(
+            side_effect=ConnectionError("Redis server unavailable")
+        )
 
         result = await publish("test_channel", "Hello World")
 
@@ -198,7 +200,9 @@ class TestPubSubOperations:
         mock_redis = mock_redis_connection_manager
         mock_pubsub = Mock()
         mock_redis.pubsub.return_value = mock_pubsub
-        mock_pubsub.unsubscribe = AsyncMock(side_effect=RedisError("Unsubscribe failed"))
+        mock_pubsub.unsubscribe = AsyncMock(
+            side_effect=RedisError("Unsubscribe failed")
+        )
 
         result = await unsubscribe("test_channel")
 
