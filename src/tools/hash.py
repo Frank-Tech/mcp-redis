@@ -1,4 +1,4 @@
-from typing import List, Union, Optional
+from typing import List, Union, Optional, Dict
 
 import numpy as np
 from redis.exceptions import RedisError
@@ -9,7 +9,11 @@ from src.common.server import mcp
 
 @mcp.tool()
 async def hset(
-    name: str, key: str, value: str | int | float, expire_seconds: Optional[int] = None
+    name: str,
+    key: Optional[str] = None,
+    value: Optional[Union[str, int, float]] = None,
+    mapping: Optional[Dict[str, Union[str, int, float]]] = None,
+    expire_seconds: Optional[int] = None,
 ) -> str:
     """Set a field in a hash stored at key with an optional expiration time.
 
@@ -24,12 +28,21 @@ async def hset(
     """
     try:
         r = RedisConnectionManager.get_connection()
-        await r.hset(name, key, str(value))
+
+        # Support single key/value or mapping dict
+        data = mapping or {}
+        if key is not None and value is not None:
+            data[key] = str(value)
+
+        if not data:
+            return "Error: No keys/values provided."
+
+        await r.hset(name, mapping=data)
 
         if expire_seconds is not None:
             await r.expire(name, expire_seconds)
 
-        return f"Field '{key}' set successfully in hash '{name}'." + (
+        return f"Field(s) set successfully in hash '{name}'." + (
             f" Expires in {expire_seconds} seconds." if expire_seconds else ""
         )
     except RedisError as e:
@@ -56,7 +69,7 @@ async def hget(name: str, key: str) -> str:
 
 
 @mcp.tool()
-async def hdel(name: str, key: str) -> str:
+async def hdel(name: str, keys: Union[str, List[str]]) -> str:
     """Delete a field from a Redis hash.
 
     Args:
@@ -68,14 +81,18 @@ async def hdel(name: str, key: str) -> str:
     """
     try:
         r = RedisConnectionManager.get_connection()
-        deleted = await r.hdel(name, key)
+
+        if isinstance(keys, str):
+            keys = [keys]
+
+        deleted = await r.hdel(name, *keys)
         return (
-            f"Field '{key}' deleted from hash '{name}'."
+            f"Field '{keys}' deleted from hash '{name}'."
             if deleted
-            else f"Field '{key}' not found in hash '{name}'."
+            else f"Field '{keys}' not found in hash '{name}'."
         )
     except RedisError as e:
-        return f"Error deleting field '{key}' from hash '{name}': {str(e)}"
+        return f"Error deleting field '{keys}' from hash '{name}': {str(e)}"
 
 
 @mcp.tool()

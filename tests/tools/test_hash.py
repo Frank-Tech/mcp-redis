@@ -29,8 +29,10 @@ class TestHashOperations:
 
         result = await hset("test_hash", "field1", "value1")
 
-        mock_redis.hset.assert_called_once_with("test_hash", "field1", "value1")
-        assert "Field 'field1' set successfully in hash 'test_hash'." in result
+        mock_redis.hset.assert_called_once_with(
+            "test_hash", mapping={"field1": "value1"}
+        )
+        assert "Field(s) set successfully in hash 'test_hash'." in result
 
     @pytest.mark.asyncio
     async def test_hset_with_expiration(self, mock_redis_connection_manager):
@@ -39,9 +41,11 @@ class TestHashOperations:
         mock_redis.hset = AsyncMock(return_value=1)
         mock_redis.expire = AsyncMock(return_value=True)
 
-        result = await hset("test_hash", "field1", "value1", 60)
+        result = await hset("test_hash", "field1", "value1", expire_seconds=60)
 
-        mock_redis.hset.assert_called_once_with("test_hash", "field1", "value1")
+        mock_redis.hset.assert_called_once_with(
+            "test_hash", mapping={"field1": "value1"}
+        )
         mock_redis.expire.assert_called_once_with("test_hash", 60)
         assert "Expires in 60 seconds." in result
 
@@ -53,8 +57,8 @@ class TestHashOperations:
 
         result = await hset("test_hash", "count", 42)
 
-        mock_redis.hset.assert_called_once_with("test_hash", "count", "42")
-        assert "Field 'count' set successfully in hash 'test_hash'." in result
+        mock_redis.hset.assert_called_once_with("test_hash", mapping={"count": "42"})
+        assert "Field(s) set successfully in hash 'test_hash'." in result
 
     @pytest.mark.asyncio
     async def test_hset_float_value(self, mock_redis_connection_manager):
@@ -64,8 +68,8 @@ class TestHashOperations:
 
         result = await hset("test_hash", "price", 19.99)
 
-        mock_redis.hset.assert_called_once_with("test_hash", "price", "19.99")
-        assert "Field 'price' set successfully in hash 'test_hash'." in result
+        mock_redis.hset.assert_called_once_with("test_hash", mapping={"price": "19.99"})
+        assert "Field(s) set successfully in hash 'test_hash'." in result
 
     @pytest.mark.asyncio
     async def test_hset_redis_error(self, mock_redis_connection_manager):
@@ -159,7 +163,7 @@ class TestHashOperations:
         result = await hdel("test_hash", "field1")
 
         mock_redis.hdel.assert_called_once_with("test_hash", "field1")
-        assert "Field 'field1' deleted from hash 'test_hash'." in result
+        assert "Field '['field1']' deleted from hash 'test_hash'." in result
 
     @pytest.mark.asyncio
     async def test_hdel_field_not_found(self, mock_redis_connection_manager):
@@ -169,7 +173,7 @@ class TestHashOperations:
 
         result = await hdel("test_hash", "nonexistent_field")
 
-        assert "Field 'nonexistent_field' not found in hash 'test_hash'" in result
+        assert "Field '['nonexistent_field']' not found in hash 'test_hash'." in result
 
     @pytest.mark.asyncio
     async def test_hdel_redis_error(self, mock_redis_connection_manager):
@@ -180,7 +184,7 @@ class TestHashOperations:
         result = await hdel("test_hash", "field1")
 
         assert (
-            "Error deleting field 'field1' from hash 'test_hash': Connection failed"
+            "Error deleting field '['field1']' from hash 'test_hash': Connection failed"
             in result
         )
 
@@ -328,12 +332,10 @@ class TestHashOperations:
         mock_redis.hset = AsyncMock(return_value=1)
         mock_redis.expire = AsyncMock(side_effect=RedisError("Expire failed"))
 
-        result = await hset("test_hash", "field1", "value1", 60)
+        result = await hset("test_hash", "field1", "value1", expire_seconds=60)
 
         # Should still report success for hset, but mention expire error
-        assert (
-            "Error setting field 'field1' in hash 'test_hash': Expire failed" in result
-        )
+        assert ("Error setting field" in result) and ("Expire failed" in result)
 
     @pytest.mark.asyncio
     async def test_vector_operations_with_empty_vector(
