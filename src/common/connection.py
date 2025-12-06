@@ -34,56 +34,42 @@ class RedisConnectionManager:
                         )
                         raise
 
+                # Base parameters common to both modes
+                base_params = {
+                    "host": REDIS_CFG["host"],
+                    "port": REDIS_CFG["port"],
+                    "username": REDIS_CFG["username"],
+                    "password": REDIS_CFG["password"],
+                    "ssl": REDIS_CFG["ssl"],
+                    "ssl_ca_path": REDIS_CFG["ssl_ca_path"],
+                    "ssl_keyfile": REDIS_CFG["ssl_keyfile"],
+                    "ssl_certfile": REDIS_CFG["ssl_certfile"],
+                    "ssl_cert_reqs": REDIS_CFG["ssl_cert_reqs"],
+                    "ssl_ca_certs": REDIS_CFG["ssl_ca_certs"],
+                    "decode_responses": decode_responses,
+                    "lib_name": f"redis-py-async(mcp-server_v{__version__})",
+                }
+
                 if REDIS_CFG["cluster_mode"]:
                     redis_class: Type[Union[Redis, RedisCluster]] = RedisCluster
-
-                    connection_params = {
-                        "host": REDIS_CFG["host"],
-                        "port": REDIS_CFG["port"],
-                        "username": REDIS_CFG["username"],
-                        "password": REDIS_CFG["password"],
-                        "ssl": REDIS_CFG["ssl"],
-                        "ssl_ca_path": REDIS_CFG["ssl_ca_path"],
-                        "ssl_keyfile": REDIS_CFG["ssl_keyfile"],
-                        "ssl_certfile": REDIS_CFG["ssl_certfile"],
-                        "ssl_cert_reqs": REDIS_CFG["ssl_cert_reqs"],
-                        "ssl_ca_certs": REDIS_CFG["ssl_ca_certs"],
-                        "decode_responses": decode_responses,
-                        "lib_name": f"redis-py-async(mcp-server_v{__version__})",  # Updated lib name
-                        "max_connections_per_node": 10,
-                    }
-
-                    # Add credential provider if available
-                    if credential_provider:
-                        connection_params["credential_provider"] = credential_provider
-                        # Note: Azure Redis Enterprise with EntraID uses plain text connections
-                        # SSL setting is controlled by REDIS_SSL environment variable
+                    connection_params = base_params.copy()
+                    connection_params["max_connections_per_node"] = 10
                 else:
                     redis_class: Type[Union[Redis, RedisCluster]] = redis.Redis
-                    connection_params = {
-                        "host": REDIS_CFG["host"],
-                        "port": REDIS_CFG["port"],
-                        "db": REDIS_CFG["db"],
-                        "username": REDIS_CFG["username"],
-                        "password": REDIS_CFG["password"],
-                        "ssl": REDIS_CFG["ssl"],
-                        "ssl_ca_path": REDIS_CFG["ssl_ca_path"],
-                        "ssl_keyfile": REDIS_CFG["ssl_keyfile"],
-                        "ssl_certfile": REDIS_CFG["ssl_certfile"],
-                        "ssl_cert_reqs": REDIS_CFG["ssl_cert_reqs"],
-                        "ssl_ca_certs": REDIS_CFG["ssl_ca_certs"],
-                        "decode_responses": decode_responses,
-                        "lib_name": f"redis-py-async(mcp-server_v{__version__})",  # Updated lib name
-                        "max_connections": 10,
-                    }
+                    connection_params = base_params.copy()
+                    connection_params["db"] = REDIS_CFG["db"]
+                    connection_params["max_connections"] = 10
 
-                    # Add credential provider if available
-                    if credential_provider:
-                        connection_params["credential_provider"] = credential_provider
-                        # Note: Azure Redis Enterprise with EntraID uses plain text connections
-                        # SSL setting is controlled by REDIS_SSL environment variable
+                # Add credential provider if available
+                if credential_provider:
+                    connection_params["credential_provider"] = credential_provider
 
-                cls._instance = redis_class(**connection_params)
+                # CRITICAL FIX for AsyncIO:
+                # The async client crashes if you pass None for keys it doesn't recognize (like ssl_ca_path).
+                # We must filter out None values so we only pass arguments that are actually set.
+                filtered_params = {k: v for k, v in connection_params.items() if v is not None}
+
+                cls._instance = redis_class(**filtered_params)
 
             except redis_exceptions.ConnectionError:
                 _logger.error("Failed to connect to Redis server")
@@ -102,6 +88,9 @@ class RedisConnectionManager:
                 raise
             except redis_exceptions.ClusterError as e:
                 _logger.error("Redis Cluster error: %s", e)
+                raise
+            except TypeError as e:
+                _logger.error("Configuration error (TypeError): %s", e)
                 raise
             except Exception as e:
                 _logger.error("Unexpected error: %s", e)
