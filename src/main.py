@@ -36,7 +36,7 @@ class RedisMCPServer:
                     mcp.settings.sse_path = "/sse"
                     app = mcp.sse_app()
 
-                uvicorn.run(app, uds=self.uds, loop="uvloop", log_level="info")
+                uvicorn.run(app, uds=self.uds, loop="uvloop", log_level="info", ws="none")
 
             else:
                 mcp.settings.host = self.host
