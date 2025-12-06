@@ -27,23 +27,30 @@ class RedisMCPServer:
         try:
             if self.transport == "stdio":
                 mcp.run(transport="stdio")
+                return
 
-            elif self.uds:
-                if self.transport == "http":
-                    mcp.settings.streamable_http_path = "/sse"
-                    app = mcp.streamable_http_app()
-                else:
-                    mcp.settings.sse_path = "/sse"
-                    app = mcp.sse_app()
-
-                uvicorn.run(
-                    app, uds=self.uds, loop="uvloop", log_level="info", ws="none"
-                )
-
+            if self.transport == "http":
+                mcp.settings.streamable_http_path = "/sse"
+                app = mcp.streamable_http_app()
             else:
-                mcp.settings.host = self.host
-                mcp.settings.port = self.port
-                mcp.run(transport=self.transport)
+                mcp.settings.sse_path = "/sse"
+                app = mcp.sse_app()
+
+            config_kwargs = {
+                "app": app,
+                "loop": "uvloop",
+                "log_level": "info",
+                "ws": "none",
+            }
+
+            if self.uds:
+                config = uvicorn.Config(uds=self.uds, **config_kwargs)
+            else:
+                config = uvicorn.Config(host=self.host, port=self.port, **config_kwargs)
+
+            server = uvicorn.Server(config)
+            server.run()
+
         except KeyboardInterrupt:
             logging.info("KeyboardInterrupt")
 
