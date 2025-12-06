@@ -151,6 +151,8 @@ def cli(
     entraid_retry_delay_ms,
 ):
     """Redis MCP Server - Model Context Protocol server for Redis."""
+    if uds and sys.platform == "win32":
+        raise click.BadParameter("Unix Domain Sockets are not supported on Windows.")
 
     if uds and transport != "sse":
         raise click.BadParameter("'--uds' can only be used with '--transport sse'")
