@@ -2,6 +2,7 @@ import logging
 import sys
 
 import click
+import uvicorn
 
 from src.common.config import parse_redis_uri, set_redis_config_from_cli
 from src.common.config import (
@@ -12,7 +13,7 @@ from src.common.server import mcp
 
 
 class RedisMCPServer:
-    def __init__(self, transport="stdio", host="127.0.0.1", port=8000):
+    def __init__(self, transport="http", host="127.0.0.1", port=8000, uds=None):
         # Configure logging on server initialization (idempotent)
         configure_logging()
         self._logger = logging.getLogger(__name__)
@@ -20,11 +21,21 @@ class RedisMCPServer:
         self.transport = transport
         self.host = host
         self.port = port
+        self.uds = uds
 
     def run(self):
         try:
             if self.transport == "stdio":
-                mcp.run(transport=self.transport)
+                mcp.run(transport="stdio")
+
+            elif self.uds:
+                if self.transport == "http":
+                    app = mcp.http_app()
+                else:
+                    app = mcp.sse_app()
+
+                uvicorn.run(app, uds=self.uds, loop="uvloop", log_level="info")
+
             else:
                 mcp.settings.host = self.host
                 mcp.settings.port = self.port
@@ -36,11 +47,14 @@ class RedisMCPServer:
 @click.command()
 @click.option(
     "--transport",
-    default="stdio",
+    default="http",
     help="Transport mechanism for the MCP server. Defaults to 'http'.",
 )
 @click.option("--mcp-host", default="127.0.0.1", help="MCP host")
 @click.option("--mcp-port", default=8000, type=int, help="MCP port")
+@click.option(
+    "--uds", default=None, help="Unix Domain Socket path (Overrides host/port)."
+)
 @click.option(
     "--url",
     help="Redis connection URI (redis://user:pass@host:port/db or rediss:// for SSL)",
@@ -109,6 +123,7 @@ def cli(
     transport,
     mcp_host,
     mcp_port,
+    uds,
     url,
     host,
     port,
@@ -134,6 +149,12 @@ def cli(
     entraid_retry_delay_ms,
 ):
     """Redis MCP Server - Model Context Protocol server for Redis."""
+
+    if transport == "stdio" and uds:
+        raise click.BadParameter(
+            "Cannot use '--uds' (Socket) with 'stdio' transport. Stdio uses pipes, not sockets."
+        )
+
     if transport == "stdio":
         if mcp_host != "127.0.0.1" or mcp_port != 8000:
             raise click.BadParameter(
@@ -212,7 +233,7 @@ def cli(
         set_entraid_config_from_cli(entraid_config)
 
     # Start the server
-    server = RedisMCPServer(transport=transport, host=mcp_host, port=mcp_port)
+    server = RedisMCPServer(transport=transport, host=mcp_host, port=mcp_port, uds=uds)
     server.run()
 
 
