@@ -13,7 +13,7 @@ from src.common.server import mcp
 
 
 class RedisMCPServer:
-    def __init__(self, transport="http", host="127.0.0.1", port=8000, uds=None):
+    def __init__(self, transport="stdio", host=None, port=None, uds=None):
         # Configure logging on server initialization (idempotent)
         configure_logging()
         self._logger = logging.getLogger(__name__)
@@ -30,8 +30,10 @@ class RedisMCPServer:
 
             elif self.uds:
                 if self.transport == "http":
-                    app = mcp.http_app()
+                    mcp.settings.streamable_http_path = "/sse"
+                    app = mcp.streamable_http_app()
                 else:
+                    mcp.settings.sse_path = "/sse"
                     app = mcp.sse_app()
 
                 uvicorn.run(app, uds=self.uds, loop="uvloop", log_level="info")
@@ -47,7 +49,7 @@ class RedisMCPServer:
 @click.command()
 @click.option(
     "--transport",
-    default="http",
+    default="stdio",
     help="Transport mechanism for the MCP server. Defaults to 'http'.",
 )
 @click.option("--mcp-host", default="127.0.0.1", help="MCP host")
@@ -150,10 +152,8 @@ def cli(
 ):
     """Redis MCP Server - Model Context Protocol server for Redis."""
 
-    if transport == "stdio" and uds:
-        raise click.BadParameter(
-            "Cannot use '--uds' (Socket) with 'stdio' transport. Stdio uses pipes, not sockets."
-        )
+    if uds and transport != "sse":
+        raise click.BadParameter("'--uds' can only be used with '--transport sse'")
 
     if transport == "stdio":
         if mcp_host != "127.0.0.1" or mcp_port != 8000:
