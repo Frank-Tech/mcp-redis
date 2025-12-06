@@ -134,7 +134,7 @@ class TestRedisConnectionManager:
     @patch("src.common.connection.redis.Redis")
     @patch("src.common.connection.REDIS_CFG")
     def test_get_connection_with_decode_responses_false(
-            self, mock_config, mock_redis_class
+        self, mock_config, mock_redis_class
     ):
         """Test getting connection with decode_responses=False."""
         mock_config.__getitem__.side_effect = lambda key: {
@@ -197,7 +197,7 @@ class TestRedisConnectionManager:
     @patch("src.common.connection.redis.Redis")
     @patch("src.common.connection.REDIS_CFG")
     def test_get_connection_includes_version_in_lib_name(
-            self, mock_config, mock_redis_class
+        self, mock_config, mock_redis_class
     ):
         """Test that connection includes version information in lib_name."""
         mock_config.__getitem__.side_effect = lambda key: {
