@@ -231,6 +231,14 @@ class TestMCPServerIntegration:
             "sadd",
             "srem",
             "smembers",
+            "scard",
+            "sismember",
+            "spop",
+            "srandmember",
+            "smove",
+            "sdiff",
+            "sinter",
+            "sunion",
             "zadd",
             "zrange",
             "zrem",
@@ -278,7 +286,7 @@ class TestMCPServerIntegration:
         tool_names = [tool["name"] for tool in tools]
 
         # Expected tool count (based on @mcp.tool() decorators in codebase)
-        expected_tool_count = 54
+        expected_tool_count = 62
         assert len(tools) == expected_tool_count, (
             f"Expected {expected_tool_count} tools, but got {len(tools)}"
         )
@@ -315,12 +323,20 @@ class TestMCPServerIntegration:
             "sadd",
             "scan_all_keys",
             "scan_keys",
+            "scard",
+            "sdiff",
             "search_redis_documents",
             "set",
             "set_vector_in_hash",
+            "sinter",
+            "sismember",
             "smembers",
+            "smove",
+            "spop",
+            "srandmember",
             "srem",
             "subscribe",
+            "sunion",
             "type",
             "unsubscribe",
             "vector_search_hash",
@@ -353,7 +369,19 @@ class TestMCPServerIntegration:
             "string": ["get", "set", "incr", "decr", "incrbyfloat", "decrbyfloat"],
             "hash": ["hget", "hset", "hgetall", "hdel", "hexists"],
             "list": ["lpush", "rpush", "lpop", "rpop", "lrange", "llen"],
-            "set": ["sadd", "srem", "smembers"],
+            "set": [
+                "sadd",
+                "srem",
+                "smembers",
+                "scard",
+                "sismember",
+                "spop",
+                "srandmember",
+                "smove",
+                "sdiff",
+                "sinter",
+                "sunion",
+            ],
             "sorted_set": ["zadd", "zrem", "zrange"],
             "stream": ["xadd", "xdel", "xrange"],
             "json": ["json_get", "json_set", "json_del"],

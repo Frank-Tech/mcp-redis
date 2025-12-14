@@ -7,7 +7,20 @@ from unittest.mock import Mock, patch, AsyncMock
 import pytest
 from redis.exceptions import RedisError
 
-from src.tools.set import sadd, smembers, srem
+# Updated imports to include the new functions
+from src.tools.set import (
+    sadd,
+    smembers,
+    srem,
+    scard,
+    sismember,
+    spop,
+    srandmember,
+    smove,
+    sdiff,
+    sinter,
+    sunion,
+)
 
 
 class TestSetOperations:
@@ -265,3 +278,231 @@ class TestSetOperations:
         smembers_sig = inspect.signature(smembers)
         smembers_params = list(smembers_sig.parameters.keys())
         assert smembers_params == ["name"]
+
+    @pytest.mark.asyncio
+    async def test_scard_success(self, mock_redis_connection_manager):
+        """Test successful set cardinality operation."""
+        mock_redis = mock_redis_connection_manager
+        mock_redis.scard = AsyncMock(return_value=5)
+
+        result = await scard("test_set")
+
+        mock_redis.scard.assert_called_once_with("test_set")
+        assert result == 5
+
+    @pytest.mark.asyncio
+    async def test_scard_redis_error(self, mock_redis_connection_manager):
+        """Test scard with Redis error."""
+        mock_redis = mock_redis_connection_manager
+        mock_redis.scard = AsyncMock(side_effect=RedisError("Error"))
+
+        result = await scard("test_set")
+        assert "Error retrieving cardinality for set 'test_set': Error" in result
+
+    @pytest.mark.asyncio
+    async def test_sismember_true(self, mock_redis_connection_manager):
+        """Test sismember returning true."""
+        mock_redis = mock_redis_connection_manager
+        mock_redis.sismember = AsyncMock(return_value=True)
+
+        result = await sismember("test_set", "val")
+
+        mock_redis.sismember.assert_called_once_with("test_set", "val")
+        assert result is True
+
+    @pytest.mark.asyncio
+    async def test_sismember_false(self, mock_redis_connection_manager):
+        """Test sismember returning false."""
+        mock_redis = mock_redis_connection_manager
+        mock_redis.sismember = AsyncMock(return_value=False)
+
+        result = await sismember("test_set", "val")
+        assert result is False
+
+    @pytest.mark.asyncio
+    async def test_sismember_redis_error(self, mock_redis_connection_manager):
+        """Test sismember with Redis error."""
+        mock_redis = mock_redis_connection_manager
+        mock_redis.sismember = AsyncMock(side_effect=RedisError("Error"))
+
+        result = await sismember("test_set", "val")
+        assert "Error checking membership for 'val' in set 'test_set': Error" in result
+
+    @pytest.mark.asyncio
+    async def test_spop_single_success(self, mock_redis_connection_manager):
+        """Test spop with single value."""
+        mock_redis = mock_redis_connection_manager
+        mock_redis.spop = AsyncMock(return_value="member1")
+
+        result = await spop("test_set")
+
+        mock_redis.spop.assert_called_once_with("test_set", None)
+        assert result == "member1"
+
+    @pytest.mark.asyncio
+    async def test_spop_count_success(self, mock_redis_connection_manager):
+        """Test spop with count."""
+        mock_redis = mock_redis_connection_manager
+        mock_redis.spop = AsyncMock(return_value=["m1", "m2"])
+
+        result = await spop("test_set", count=2)
+
+        mock_redis.spop.assert_called_once_with("test_set", 2)
+        assert result == ["m1", "m2"]
+
+    @pytest.mark.asyncio
+    async def test_spop_empty(self, mock_redis_connection_manager):
+        """Test spop on empty set."""
+        mock_redis = mock_redis_connection_manager
+        mock_redis.spop = AsyncMock(return_value=None)
+
+        result = await spop("empty_set")
+        assert "Set 'empty_set' is empty or does not exist" in result
+
+    @pytest.mark.asyncio
+    async def test_spop_redis_error(self, mock_redis_connection_manager):
+        """Test spop with Redis error."""
+        mock_redis = mock_redis_connection_manager
+        mock_redis.spop = AsyncMock(side_effect=RedisError("Error"))
+
+        result = await spop("test_set")
+        assert "Error popping member(s) from set 'test_set': Error" in result
+
+    @pytest.mark.asyncio
+    async def test_srandmember_single(self, mock_redis_connection_manager):
+        """Test srandmember with single value."""
+        mock_redis = mock_redis_connection_manager
+        mock_redis.srandmember = AsyncMock(return_value="member1")
+
+        result = await srandmember("test_set")
+
+        mock_redis.srandmember.assert_called_once_with("test_set", None)
+        assert result == "member1"
+
+    @pytest.mark.asyncio
+    async def test_srandmember_list(self, mock_redis_connection_manager):
+        """Test srandmember with count."""
+        mock_redis = mock_redis_connection_manager
+        mock_redis.srandmember = AsyncMock(return_value=["m1", "m2"])
+
+        result = await srandmember("test_set", count=2)
+
+        mock_redis.srandmember.assert_called_once_with("test_set", 2)
+        assert result == ["m1", "m2"]
+
+    @pytest.mark.asyncio
+    async def test_srandmember_empty(self, mock_redis_connection_manager):
+        """Test srandmember on empty set."""
+        mock_redis = mock_redis_connection_manager
+        mock_redis.srandmember = AsyncMock(return_value=None)
+
+        result = await srandmember("empty_set")
+        assert "Set 'empty_set' is empty or does not exist" in result
+
+    @pytest.mark.asyncio
+    async def test_smove_success(self, mock_redis_connection_manager):
+        """Test successful smove."""
+        mock_redis = mock_redis_connection_manager
+        mock_redis.smove = AsyncMock(return_value=True)
+
+        result = await smove("src", "dest", "val")
+
+        mock_redis.smove.assert_called_once_with("src", "dest", "val")
+        assert result is True
+
+    @pytest.mark.asyncio
+    async def test_smove_fail(self, mock_redis_connection_manager):
+        """Test smove failure (element not in source)."""
+        mock_redis = mock_redis_connection_manager
+        mock_redis.smove = AsyncMock(return_value=False)
+
+        result = await smove("src", "dest", "val")
+        assert result is False
+
+    @pytest.mark.asyncio
+    async def test_smove_redis_error(self, mock_redis_connection_manager):
+        """Test smove with Redis error."""
+        mock_redis = mock_redis_connection_manager
+        mock_redis.smove = AsyncMock(side_effect=RedisError("Error"))
+
+        result = await smove("src", "dest", "val")
+        assert "Error moving value 'val' from 'src' to 'dest': Error" in result
+
+    @pytest.mark.asyncio
+    async def test_sdiff_success(self, mock_redis_connection_manager):
+        """Test successful sdiff."""
+        mock_redis = mock_redis_connection_manager
+        mock_redis.sdiff = AsyncMock(return_value={"m1"})
+
+        result = await sdiff(["key1", "key2"])
+
+        mock_redis.sdiff.assert_called_once_with("key1", "key2")
+        assert result == ["m1"]
+
+    @pytest.mark.asyncio
+    async def test_sdiff_no_keys(self, mock_redis_connection_manager):
+        """Test sdiff with no keys provided."""
+        result = await sdiff([])
+        assert "Error: At least one key must be provided" in result
+
+    @pytest.mark.asyncio
+    async def test_sdiff_redis_error(self, mock_redis_connection_manager):
+        """Test sdiff with Redis error."""
+        mock_redis = mock_redis_connection_manager
+        mock_redis.sdiff = AsyncMock(side_effect=RedisError("Error"))
+
+        result = await sdiff(["key1"])
+        assert "Error calculating difference for keys ['key1']: Error" in result
+
+    @pytest.mark.asyncio
+    async def test_sinter_success(self, mock_redis_connection_manager):
+        """Test successful sinter."""
+        mock_redis = mock_redis_connection_manager
+        mock_redis.sinter = AsyncMock(return_value={"m1"})
+
+        result = await sinter(["key1", "key2"])
+
+        mock_redis.sinter.assert_called_once_with("key1", "key2")
+        assert result == ["m1"]
+
+    @pytest.mark.asyncio
+    async def test_sinter_no_keys(self, mock_redis_connection_manager):
+        """Test sinter with no keys provided."""
+        result = await sinter([])
+        assert "Error: At least one key must be provided" in result
+
+    @pytest.mark.asyncio
+    async def test_sinter_redis_error(self, mock_redis_connection_manager):
+        """Test sinter with Redis error."""
+        mock_redis = mock_redis_connection_manager
+        mock_redis.sinter = AsyncMock(side_effect=RedisError("Error"))
+
+        result = await sinter(["key1"])
+        assert "Error calculating intersection for keys ['key1']: Error" in result
+
+    @pytest.mark.asyncio
+    async def test_sunion_success(self, mock_redis_connection_manager):
+        """Test successful sunion."""
+        mock_redis = mock_redis_connection_manager
+        mock_redis.sunion = AsyncMock(return_value={"m1", "m2"})
+
+        result = await sunion(["key1", "key2"])
+
+        mock_redis.sunion.assert_called_once_with("key1", "key2")
+        # sunion implementation converts set to list
+        assert set(result) == {"m1", "m2"}
+
+    @pytest.mark.asyncio
+    async def test_sunion_no_keys(self, mock_redis_connection_manager):
+        """Test sunion with no keys provided."""
+        result = await sunion([])
+        assert "Error: At least one key must be provided" in result
+
+    @pytest.mark.asyncio
+    async def test_sunion_redis_error(self, mock_redis_connection_manager):
+        """Test sunion with Redis error."""
+        mock_redis = mock_redis_connection_manager
+        mock_redis.sunion = AsyncMock(side_effect=RedisError("Error"))
+
+        result = await sunion(["key1"])
+        assert "Error calculating union for keys ['key1']: Error" in result
