@@ -30,7 +30,7 @@ class RedisMCPServer:
                 return
 
             if self.transport == "http":
-                mcp.settings.streamable_http_path = "/sse"
+                mcp.settings.streamable_http_path = "/mcp"
                 app = mcp.streamable_http_app()
             else:
                 mcp.settings.sse_path = "/sse"
