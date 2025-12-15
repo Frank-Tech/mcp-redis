@@ -6,7 +6,6 @@ on:
   pull_request:
     branches: [ "main" ]
 
-# REQUIRED: This gives the action permission to upload to your packages
 permissions:
   contents: read
   packages: write
@@ -16,17 +15,20 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout Code
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2. FIX: Convert uppercase repo name (Frank-Tech) to lowercase (frank-tech)
-      # Docker registries generally do not allow uppercase letters.
       - name: Lowercase Repo Name
         run: |
           echo "REPO_LOWER=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
 
-      # 3. Login to GitHub Container Registry (only on main branch push)
+      # --- NEW: Required for multi-arch builds (ARM64/Mac) ---
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: Log in to the Container registry
         if: github.event_name != 'pull_request'
         uses: docker/login-action@v3
@@ -35,23 +37,16 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GHCR_PAT }}
 
-      # 4. Setup Build Environment
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      # 5. Build and Push
       - name: Build and push UDS image
         uses: docker/build-push-action@v6
         with:
           context: .
-          # Points to your dedicated UDS Dockerfile
           file: uds.Dockerfile
-          # Only push if this is NOT a pull request
+          # --- NEW: Build for both Intel (amd64) and Mac (arm64) ---
+          platforms: linux/amd64,linux/arm64
           push: ${{ github.event_name != 'pull_request' }}
-          # Use the lowercase variable we created in Step 2
           tags: |
             ghcr.io/${{ env.REPO_LOWER }}-uds:latest
             ghcr.io/${{ env.REPO_LOWER }}-uds:${{ github.sha }}
-          # Caching configuration to make builds faster
           cache-from: type=gha
           cache-to: type=gha,mode=max
