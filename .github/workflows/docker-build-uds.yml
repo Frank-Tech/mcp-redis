@@ -45,7 +45,7 @@ jobs:
         with:
           context: .
           # Points to your dedicated UDS Dockerfile
-          file: Dockerfile.uds
+          file: uds.Dockerfile
           # Only push if this is NOT a pull request
           push: ${{ github.event_name != 'pull_request' }}
           # Use the lowercase variable we created in Step 2
