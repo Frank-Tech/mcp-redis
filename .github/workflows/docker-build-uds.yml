@@ -50,8 +50,8 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           # Use the lowercase variable we created in Step 2
           tags: |
-            ghcr.io/${{ env.REPO_LOWER }}:uds-latest
-            ghcr.io/${{ env.REPO_LOWER }}:uds-${{ github.sha }}
+            ghcr.io/${{ env.REPO_LOWER }}-uds:latest
+            ghcr.io/${{ env.REPO_LOWER }}-uds:${{ github.sha }}
           # Caching configuration to make builds faster
           cache-from: type=gha
           cache-to: type=gha,mode=max
