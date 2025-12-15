@@ -18,6 +18,7 @@ REDIS_CFG = {
     "mcp_port": int(os.getenv("MCP_PORT", 8000)),
     "host": os.getenv("REDIS_HOST", "127.0.0.1"),
     "port": int(os.getenv("REDIS_PORT", 6379)),
+    "unix_socket_path": os.getenv("REDIS_UNIX_SOCKET_PATH", None),
     "username": os.getenv("REDIS_USERNAME", None),
     "password": os.getenv("REDIS_PWD", ""),
     "ssl": os.getenv("REDIS_SSL", False) in ("true", "1", "t"),
@@ -96,6 +97,9 @@ def parse_redis_uri(uri: str) -> dict:
         config["ssl"] = True
     elif parsed.scheme == "redis":
         config["ssl"] = False
+    elif parsed.scheme == "unix":
+        config["unix_socket_path"] = parsed.path
+        return config
     else:
         raise ValueError(f"Unsupported scheme: {parsed.scheme}")
 

@@ -64,7 +64,9 @@ class RedisMCPServer:
 @click.option("--mcp-host", default="127.0.0.1", help="MCP host")
 @click.option("--mcp-port", default=8000, type=int, help="MCP port")
 @click.option(
-    "--uds", default=None, help="Unix Domain Socket path (Overrides host/port)."
+    "--uds",
+    default=None,
+    help="Unix Domain Socket path for MCP server (Overrides host/port).",
 )
 @click.option(
     "--url",
@@ -72,6 +74,9 @@ class RedisMCPServer:
 )
 @click.option("--host", default="127.0.0.1", help="Redis host")
 @click.option("--port", default=6379, type=int, help="Redis port")
+@click.option(
+    "--redis-unix-socket-path", default=None, help="Redis Unix Domain Socket path"
+)
 @click.option("--db", default=0, type=int, help="Redis database number")
 @click.option("--username", help="Redis username")
 @click.option("--password", help="Redis password")
@@ -138,6 +143,7 @@ def cli(
     url,
     host,
     port,
+    redis_unix_socket_path,
     db,
     username,
     password,
@@ -173,8 +179,6 @@ def cli(
             )
 
     # Handle Redis URI if provided (and not empty)
-    # Note: gemini-cli passes the raw "${REDIS_URL}" string when the env var is not set
-
     if url and url.strip() and url.strip() != "${REDIS_URL}":
         try:
             uri_config = parse_redis_uri(url)
@@ -191,6 +195,9 @@ def cli(
             "ssl": ssl,
             "cluster_mode": cluster_mode,
         }
+
+        if redis_unix_socket_path:
+            config["unix_socket_path"] = redis_unix_socket_path
 
         if username:
             config["username"] = username

@@ -38,6 +38,7 @@ class RedisConnectionManager:
                 base_params = {
                     "host": REDIS_CFG["host"],
                     "port": REDIS_CFG["port"],
+                    "unix_socket_path": REDIS_CFG.get("unix_socket_path"),
                     "username": REDIS_CFG["username"],
                     "password": REDIS_CFG["password"],
                     "ssl": REDIS_CFG["ssl"],

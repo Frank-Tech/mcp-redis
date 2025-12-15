@@ -1,0 +1,44 @@
+name: Build UDS Docker Image
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-and-push-uds:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to the Container registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GHCR_PAT }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push UDS image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          # POINT TO YOUR SPECIFIC DOCKERFILE HERE:
+          file: uds.Dockerfile
+          push: ${{ github.event_name != 'pull_request' }}
+          # We use distinct tags (e.g., 'uds-latest') so we don't overwrite the standard HTTP image
+          tags: |
+            ghcr.io/${{ github.repository }}-uds:latest
+            ghcr.io/${{ github.repository }}-uds:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
