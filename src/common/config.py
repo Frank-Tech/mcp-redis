@@ -12,13 +12,36 @@ DEFAULT_TOKEN_REQUEST_EXECUTION_TIMEOUT_MS = 10000  # 10 seconds
 DEFAULT_RETRY_MAX_ATTEMPTS = 3
 DEFAULT_RETRY_DELAY_MS = 100
 
+
+# --- Helper to safely parse integers from env ---
+def get_env_int(key, default):
+    val = os.getenv(key)
+    if val is None or str(val).strip() == "":
+        return default
+    try:
+        return int(val)
+    except ValueError:
+        return default
+
+
+# --- Logic: If Socket is defined, Host/Port must be empty ---
+_unix_socket_path = os.getenv("REDIS_UNIX_SOCKET_PATH", None)
+
+if _unix_socket_path and _unix_socket_path.strip():
+    _redis_host = None
+    _redis_port = 0  # 0 indicates no TCP port
+else:
+    _redis_host = os.getenv("REDIS_HOST", "127.0.0.1")
+    _redis_port = get_env_int("REDIS_PORT", 6379)
+
 REDIS_CFG = {
     "transport": os.getenv("TRANSPORT", "http"),
     "mcp_host": os.getenv("MCP_HOST", "127.0.0.1"),
-    "mcp_port": int(os.getenv("MCP_PORT", 8000)),
-    "host": os.getenv("REDIS_HOST", "127.0.0.1"),
-    "port": int(os.getenv("REDIS_PORT", 6379)),
-    "unix_socket_path": os.getenv("REDIS_UNIX_SOCKET_PATH", None),
+    "mcp_port": get_env_int("MCP_PORT", 8000),
+    # Use the calculated values
+    "host": _redis_host,
+    "port": _redis_port,
+    "unix_socket_path": _unix_socket_path,
     "username": os.getenv("REDIS_USERNAME", None),
     "password": os.getenv("REDIS_PWD", ""),
     "ssl": os.getenv("REDIS_SSL", False) in ("true", "1", "t"),
@@ -28,7 +51,7 @@ REDIS_CFG = {
     "ssl_cert_reqs": os.getenv("REDIS_SSL_CERT_REQS", "required"),
     "ssl_ca_certs": os.getenv("REDIS_SSL_CA_CERTS", None),
     "cluster_mode": os.getenv("REDIS_CLUSTER_MODE", False) in ("true", "1", "t"),
-    "db": int(os.getenv("REDIS_DB", 0)),
+    "db": get_env_int("REDIS_DB", 0),
 }
 
 # Entra ID Authentication Configuration
@@ -156,7 +179,9 @@ def parse_redis_uri(uri: str) -> dict:
 def set_redis_config_from_cli(config: dict):
     for key, value in config.items():
         if key in ["port", "db"]:
-            # Keep port and db as integers
+            # Check for empty/None before converting to int
+            if value is None or str(value).strip() == "":
+                continue
             REDIS_CFG[key] = int(value)
         elif key == "ssl" or key == "cluster_mode":
             # Keep ssl and cluster_mode as booleans
@@ -167,6 +192,11 @@ def set_redis_config_from_cli(config: dict):
         else:
             # Convert other values to strings
             REDIS_CFG[key] = str(value) if value is not None else None
+
+    # Enforce socket priority if updated via CLI
+    if REDIS_CFG.get("unix_socket_path") and str(REDIS_CFG["unix_socket_path"]).strip():
+        REDIS_CFG["host"] = None
+        REDIS_CFG["port"] = 0
 
 
 def set_entraid_config_from_cli(config: dict):
