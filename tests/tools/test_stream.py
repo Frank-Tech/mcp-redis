@@ -22,7 +22,9 @@ class TestStreamOperations:
         fields = {"field1": "value1", "field2": "value2"}
         result = await xadd("test_stream", fields)
 
-        mock_redis.xadd.assert_called_once_with("test_stream", fields)
+        mock_redis.xadd.assert_called_once_with(
+            "test_stream", fields, maxlen=None, approximate=True
+        )
         assert "Successfully added entry 1234567890123-0 to test_stream" in result
         assert "1234567890123-0" in result
 
@@ -34,11 +36,16 @@ class TestStreamOperations:
         mock_redis.expire = AsyncMock(return_value=True)
 
         fields = {"message": "test message"}
-        result = await xadd("test_stream", fields, 60)
 
-        mock_redis.xadd.assert_called_once_with("test_stream", fields)
+        # Use keyword argument 'expiration'
+        result = await xadd("test_stream", fields, expiration=60)
+
+        mock_redis.xadd.assert_called_once_with(
+            "test_stream", fields, maxlen=None, approximate=True
+        )
         mock_redis.expire.assert_called_once_with("test_stream", 60)
-        assert "with expiration 60 seconds" in result
+
+        assert "Successfully added entry 1234567890124-0 to test_stream" in result
 
     @pytest.mark.asyncio
     async def test_xadd_single_field(self, mock_redis_connection_manager):
@@ -49,7 +56,9 @@ class TestStreamOperations:
         fields = {"message": "single field message"}
         result = await xadd("test_stream", fields)
 
-        mock_redis.xadd.assert_called_once_with("test_stream", fields)
+        mock_redis.xadd.assert_called_once_with(
+            "test_stream", fields, maxlen=None, approximate=True
+        )
         assert "Successfully added entry 1234567890125-0 to test_stream" in result
 
     @pytest.mark.asyncio
@@ -72,7 +81,9 @@ class TestStreamOperations:
         fields = {"count": 42, "price": 19.99, "active": True}
         result = await xadd("test_stream", fields)
 
-        mock_redis.xadd.assert_called_once_with("test_stream", fields)
+        mock_redis.xadd.assert_called_once_with(
+            "test_stream", fields, maxlen=None, approximate=True
+        )
         assert "Successfully added entry 1234567890126-0 to test_stream" in result
 
     @pytest.mark.asyncio
@@ -168,7 +179,9 @@ class TestStreamOperations:
         fields = {}
         result = await xadd("test_stream", fields)
 
-        mock_redis.xadd.assert_called_once_with("test_stream", fields)
+        mock_redis.xadd.assert_called_once_with(
+            "test_stream", fields, maxlen=None, approximate=True
+        )
         assert "Successfully added entry 1234567890127-0 to test_stream" in result
 
     @pytest.mark.asyncio
@@ -180,7 +193,9 @@ class TestStreamOperations:
         fields = {"message": "Hello 世界 🌍", "user": "测试用户"}
         result = await xadd("test_stream", fields)
 
-        mock_redis.xadd.assert_called_once_with("test_stream", fields)
+        mock_redis.xadd.assert_called_once_with(
+            "test_stream", fields, maxlen=None, approximate=True
+        )
         assert "Successfully added entry 1234567890128-0 to test_stream" in result
 
     @pytest.mark.asyncio
@@ -220,7 +235,9 @@ class TestStreamOperations:
         mock_redis.expire = AsyncMock(side_effect=RedisError("Expire failed"))
 
         fields = {"message": "test"}
-        result = await xadd("test_stream", fields, 60)
+
+        # Use keyword argument 'expiration'
+        result = await xadd("test_stream", fields, expiration=60)
 
         assert "Error adding to stream test_stream: Expire failed" in result
 
@@ -259,8 +276,12 @@ class TestStreamOperations:
         # Test xadd function signature
         xadd_sig = inspect.signature(xadd)
         xadd_params = list(xadd_sig.parameters.keys())
-        assert xadd_params == ["key", "fields", "expiration"]
+
+        # FIXED: Corrected order: 'approximate' is 4th, 'expiration' is 5th
+        assert xadd_params == ["key", "fields", "maxlen", "approximate", "expiration"]
         assert xadd_sig.parameters["expiration"].default is None
+        assert xadd_sig.parameters["maxlen"].default is None
+        assert xadd_sig.parameters["approximate"].default is True
 
         # Test xrange function signature
         xrange_sig = inspect.signature(xrange)
@@ -289,5 +310,7 @@ class TestStreamOperations:
         }
         result = await xadd("events_stream", fields)
 
-        mock_redis.xadd.assert_called_once_with("events_stream", fields)
+        mock_redis.xadd.assert_called_once_with(
+            "events_stream", fields, maxlen=None, approximate=True
+        )
         assert "Successfully added entry 1234567890130-0 to events_stream" in result
