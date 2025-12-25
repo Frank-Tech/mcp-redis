@@ -38,7 +38,8 @@ class RedisMCPServer:
 
             config_kwargs = {
                 "app": app,
-                "loop": "uvloop",
+                "loop": "auto",
+                "http": "auto",
                 "log_level": "info",
                 "ws": "none",
             }
