@@ -204,6 +204,12 @@ class TestMCPServerIntegration:
             "json_set",
             "json_get",
             "json_del",
+            "json_numincrby",
+            "json_arr_append",
+            "json_arr_len",
+            "json_arr_pop",
+            "json_obj_keys",
+            "json_toggle",
             "lpush",
             "rpush",
             "lpop",
@@ -286,7 +292,8 @@ class TestMCPServerIntegration:
         tool_names = [tool["name"] for tool in tools]
 
         # Expected tool count (based on @mcp.tool() decorators in codebase)
-        expected_tool_count = 62
+        # Updated to include new JSON tools
+        expected_tool_count = 68
         assert len(tools) == expected_tool_count, (
             f"Expected {expected_tool_count} tools, but got {len(tools)}"
         )
@@ -309,9 +316,15 @@ class TestMCPServerIntegration:
             "hgetall",
             "hset",
             "info",
+            "json_arr_append",
+            "json_arr_len",
+            "json_arr_pop",
             "json_del",
             "json_get",
+            "json_numincrby",
+            "json_obj_keys",
             "json_set",
+            "json_toggle",
             "llen",
             "lpop",
             "lpush",
@@ -384,7 +397,17 @@ class TestMCPServerIntegration:
             ],
             "sorted_set": ["zadd", "zrem", "zrange"],
             "stream": ["xadd", "xdel", "xrange"],
-            "json": ["json_get", "json_set", "json_del"],
+            "json": [
+                "json_get",
+                "json_set",
+                "json_del",
+                "json_numincrby",
+                "json_arr_append",
+                "json_arr_len",
+                "json_arr_pop",
+                "json_obj_keys",
+                "json_toggle",
+            ],
             "pub_sub": ["publish", "subscribe", "unsubscribe"],
             "server_mgmt": ["dbsize", "info", "client_list"],
             "misc": [
