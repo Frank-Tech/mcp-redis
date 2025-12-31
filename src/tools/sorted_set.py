@@ -77,3 +77,21 @@ async def zrem(key: str, member: str) -> str:
         )
     except RedisError as e:
         return f"Error removing from sorted set {key}: {str(e)}"
+
+
+@mcp.tool()
+async def zcard(key: str) -> str:
+    """Retrieve the cardinality of a Redis sorted set.
+
+    Args:
+        key (str): The sorted set key.
+
+    Returns:
+        str: The number of members in the sorted set or an error message.
+    """
+    try:
+        r = RedisConnectionManager.get_connection()
+        count = await r.zcard(key)
+        return f"The sorted set {key} has {count} members"
+    except RedisError as e:
+        return f"Error retrieving cardinality of sorted set {key}: {str(e)}"

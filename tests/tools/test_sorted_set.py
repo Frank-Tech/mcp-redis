@@ -7,7 +7,7 @@ from unittest.mock import Mock, patch, AsyncMock
 import pytest
 from redis.exceptions import RedisError
 
-from src.tools.sorted_set import zadd, zrange, zrem
+from src.tools.sorted_set import zadd, zrange, zrem, zcard
 
 
 class TestSortedSetOperations:
@@ -238,6 +238,41 @@ class TestSortedSetOperations:
         assert len(large_result) == 1000
 
     @pytest.mark.asyncio
+    async def test_zcard_success(self, mock_redis_connection_manager):
+        """Test successful sorted set cardinality operation."""
+        mock_redis = mock_redis_connection_manager
+        mock_redis.zcard = AsyncMock(return_value=5)
+
+        result = await zcard("test_zset")
+
+        mock_redis.zcard.assert_called_once_with("test_zset")
+        assert "The sorted set test_zset has 5 members" in result
+
+    @pytest.mark.asyncio
+    async def test_zcard_empty_set(self, mock_redis_connection_manager):
+        """Test sorted set cardinality operation on empty set."""
+        mock_redis = mock_redis_connection_manager
+        mock_redis.zcard = AsyncMock(return_value=0)
+
+        result = await zcard("empty_zset")
+
+        mock_redis.zcard.assert_called_once_with("empty_zset")
+        assert "The sorted set empty_zset has 0 members" in result
+
+    @pytest.mark.asyncio
+    async def test_zcard_redis_error(self, mock_redis_connection_manager):
+        """Test sorted set cardinality operation with Redis error."""
+        mock_redis = mock_redis_connection_manager
+        mock_redis.zcard = AsyncMock(side_effect=RedisError("Connection failed"))
+
+        result = await zcard("test_zset")
+
+        assert (
+            "Error retrieving cardinality of sorted set test_zset: Connection failed"
+            in result
+        )
+
+    @pytest.mark.asyncio
     async def test_connection_manager_called_correctly(self):
         """Test that RedisConnectionManager.get_connection is called correctly."""
         with patch(
@@ -248,6 +283,20 @@ class TestSortedSetOperations:
             mock_get_conn.return_value = mock_redis
 
             await zadd("test_zset", 1.0, "member1")
+
+            mock_get_conn.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_connection_manager_called_correctly_for_zcard(self):
+        """Test that RedisConnectionManager.get_connection is called correctly for zcard."""
+        with patch(
+            "src.tools.sorted_set.RedisConnectionManager.get_connection"
+        ) as mock_get_conn:
+            mock_redis = Mock()
+            mock_redis.zcard = AsyncMock(return_value=5)
+            mock_get_conn.return_value = mock_redis
+
+            await zcard("test_zset")
 
             mock_get_conn.assert_called_once()
 
@@ -275,3 +324,8 @@ class TestSortedSetOperations:
         zrem_sig = inspect.signature(zrem)
         zrem_params = list(zrem_sig.parameters.keys())
         assert zrem_params == ["key", "member"]
+
+        # Test zcard function signature
+        zcard_sig = inspect.signature(zcard)
+        zcard_params = list(zcard_sig.parameters.keys())
+        assert zcard_params == ["key"]

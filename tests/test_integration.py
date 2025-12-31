@@ -246,6 +246,7 @@ class TestMCPServerIntegration:
             "sinter",
             "sunion",
             "zadd",
+            "zcard",
             "zrange",
             "zrem",
             "xadd",
@@ -293,7 +294,7 @@ class TestMCPServerIntegration:
 
         # Expected tool count (based on @mcp.tool() decorators in codebase)
         # Updated to include new JSON tools
-        expected_tool_count = 68
+        expected_tool_count = 69
         assert len(tools) == expected_tool_count, (
             f"Expected {expected_tool_count} tools, but got {len(tools)}"
         )
@@ -303,7 +304,11 @@ class TestMCPServerIntegration:
             "client_list",
             "create_vector_index_hash",
             "dbsize",
+            "decr",
+            "decrbyfloat",
             "delete",
+            "eval_script",
+            "evalsha_script",
             "expire",
             "get",
             "get_index_info",
@@ -315,6 +320,8 @@ class TestMCPServerIntegration:
             "hget",
             "hgetall",
             "hset",
+            "incr",
+            "incrbyfloat",
             "info",
             "json_arr_append",
             "json_arr_len",
@@ -357,17 +364,12 @@ class TestMCPServerIntegration:
             "xdel",
             "xrange",
             "zadd",
+            "zcard",
             "zrange",
             "zrem",
-            "incr",
-            "decr",
-            "incrbyfloat",
-            "decrbyfloat",
-            "eval_script",
-            "script_load",
-            "evalsha_script",
             "script_exists",
             "script_flush",
+            "script_load",
         ]
 
         # Verify all expected tools are present
@@ -395,7 +397,7 @@ class TestMCPServerIntegration:
                 "sinter",
                 "sunion",
             ],
-            "sorted_set": ["zadd", "zrem", "zrange"],
+            "sorted_set": ["zadd", "zcard", "zrange", "zrem"],
             "stream": ["xadd", "xdel", "xrange"],
             "json": [
                 "json_get",
