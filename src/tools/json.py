@@ -101,17 +101,16 @@ async def json_numincrby(name: str, path: str, value: float) -> str:
         value: The amount to increment by (can be negative to decrement).
 
     Returns:
-        The new value of the number after incrementing.
+        The new value of the number after incrementing or an error message.
     """
     try:
         r = RedisConnectionManager.get_connection()
         new_val = await r.json().numincrby(name, path, value)
 
-        # If the path matched multiple values, new_val might be a list
+        # Handle list returns if path matches multiple items
         if isinstance(new_val, list):
-            return f"Updated multiple values. New values: {new_val}"
-
-        return f"New value at '{path}' in '{name}': {new_val}"
+            return json.dumps(new_val)
+        return str(new_val)
     except RedisError as e:
         return f"Error incrementing value at '{path}' in '{name}': {str(e)}"
 
@@ -126,7 +125,7 @@ async def json_arr_append(name: str, path: str, value: str) -> str:
         value: The value to append (JSON string or raw string).
 
     Returns:
-        The new length of the array.
+        The new length of the array or an error message.
     """
     try:
         parsed_value = json.loads(value)
@@ -136,7 +135,7 @@ async def json_arr_append(name: str, path: str, value: str) -> str:
     try:
         r = RedisConnectionManager.get_connection()
         new_len = await r.json().arrappend(name, path, parsed_value)
-        return f"Value appended. New array length at '{path}': {new_len}"
+        return str(new_len)
     except RedisError as e:
         return f"Error appending to array at '{path}' in '{name}': {str(e)}"
 
@@ -150,12 +149,12 @@ async def json_arr_len(name: str, path: str = "$") -> str:
         path: The JSON path to the array.
 
     Returns:
-        The length of the array.
+        The length of the array or an error message.
     """
     try:
         r = RedisConnectionManager.get_connection()
         length = await r.json().arrlen(name, path)
-        return f"Array length at '{path}': {length}"
+        return str(length)
     except RedisError as e:
         return f"Error getting array length at '{path}' in '{name}': {str(e)}"
 
@@ -170,7 +169,7 @@ async def json_arr_pop(name: str, path: str = "$", index: Optional[int] = -1) ->
         index: The index to pop (default: -1, the last element).
 
     Returns:
-        The popped value.
+        The popped value or an error message.
     """
     try:
         r = RedisConnectionManager.get_connection()
@@ -191,12 +190,12 @@ async def json_obj_keys(name: str, path: str = "$") -> str:
         path: The JSON path to the object.
 
     Returns:
-        A list of keys found in the object.
+        A list of keys found in the object or an error message.
     """
     try:
         r = RedisConnectionManager.get_connection()
         keys = await r.json().objkeys(name, path)
-        return f"Keys at '{path}': {keys}"
+        return json.dumps(keys)
     except RedisError as e:
         return f"Error retrieving object keys at '{path}' in '{name}': {str(e)}"
 
@@ -210,11 +209,11 @@ async def json_toggle(name: str, path: str) -> str:
         path: The JSON path to the boolean value.
 
     Returns:
-        The new boolean value.
+        The new boolean value or an error message.
     """
     try:
         r = RedisConnectionManager.get_connection()
         new_state = await r.json().toggle(name, path)
-        return f"Boolean toggled. New state at '{path}': {new_state}"
+        return str(new_state).lower()
     except RedisError as e:
         return f"Error toggling boolean at '{path}' in '{name}': {str(e)}"

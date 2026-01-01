@@ -342,7 +342,7 @@ class TestJSONOperations:
         mock_redis.json.return_value.numincrby.assert_called_once_with(
             "test_doc", ".count", 1
         )
-        assert "New value at '.count' in 'test_doc': 11" in result
+        assert result == "11"
 
     @pytest.mark.asyncio
     async def test_json_numincrby_bulk(self, mock_redis_connection_manager):
@@ -355,7 +355,7 @@ class TestJSONOperations:
         mock_redis.json.return_value.numincrby.assert_called_once_with(
             "test_doc", "..count", 1
         )
-        assert "Updated multiple values. New values: [11, 21]" in result
+        assert result == "[11, 21]"
 
     @pytest.mark.asyncio
     async def test_json_numincrby_error(self, mock_redis_connection_manager):
@@ -382,7 +382,7 @@ class TestJSONOperations:
         mock_redis.json.return_value.arrappend.assert_called_once_with(
             "test_doc", ".list", "new_item"
         )
-        assert "Value appended. New array length at '.list': 5" in result
+        assert result == "5"
 
     @pytest.mark.asyncio
     async def test_json_arr_append_success_json(self, mock_redis_connection_manager):
@@ -396,7 +396,7 @@ class TestJSONOperations:
         mock_redis.json.return_value.arrappend.assert_called_once_with(
             "test_doc", ".list", {"key": "val"}
         )
-        assert "Value appended. New array length at '.list': 6" in result
+        assert result == "6"
 
     @pytest.mark.asyncio
     async def test_json_arr_append_error(self, mock_redis_connection_manager):
@@ -420,7 +420,7 @@ class TestJSONOperations:
         result = await json_arr_len("test_doc", ".list")
 
         mock_redis.json.return_value.arrlen.assert_called_once_with("test_doc", ".list")
-        assert "Array length at '.list': 10" in result
+        assert result == "10"
 
     @pytest.mark.asyncio
     async def test_json_arr_len_error(self, mock_redis_connection_manager):
@@ -448,7 +448,6 @@ class TestJSONOperations:
         mock_redis.json.return_value.arrpop.assert_called_once_with(
             "test_doc", ".list", -1
         )
-        # Should return JSON string of the popped object
         assert result == json.dumps(popped_val, ensure_ascii=False)
 
     @pytest.mark.asyncio
@@ -483,7 +482,7 @@ class TestJSONOperations:
         result = await json_obj_keys("test_doc", ".obj")
 
         mock_redis.json.return_value.objkeys.assert_called_once_with("test_doc", ".obj")
-        assert f"Keys at '.obj': {keys}" in result
+        assert result == json.dumps(keys)
 
     @pytest.mark.asyncio
     async def test_json_obj_keys_error(self, mock_redis_connection_manager):
@@ -508,7 +507,7 @@ class TestJSONOperations:
         result = await json_toggle("test_doc", ".flag")
 
         mock_redis.json.return_value.toggle.assert_called_once_with("test_doc", ".flag")
-        assert "Boolean toggled. New state at '.flag': True" in result
+        assert result == "true"
 
     @pytest.mark.asyncio
     async def test_json_toggle_error(self, mock_redis_connection_manager):
