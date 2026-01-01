@@ -90,6 +90,12 @@ class RedisMCPServer:
 )
 @click.option("--ssl-ca-certs", help="Path to CA certificates file")
 @click.option("--cluster-mode", is_flag=True, help="Enable Redis cluster mode")
+@click.option(
+    "--max-connections",
+    default=None,
+    type=int,
+    help="Maximum number of Redis connections (defaults to env var or 1000)",
+)
 # Entra ID Authentication Options
 @click.option(
     "--entraid-auth-flow",
@@ -155,6 +161,7 @@ def cli(
     ssl_cert_reqs,
     ssl_ca_certs,
     cluster_mode,
+    max_connections,
     entraid_auth_flow,
     entraid_client_id,
     entraid_client_secret,
@@ -195,6 +202,7 @@ def cli(
             "db": db,
             "ssl": ssl,
             "cluster_mode": cluster_mode,
+            "max_connections": max_connections,
         }
 
         if redis_unix_socket_path:

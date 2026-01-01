@@ -95,6 +95,8 @@ class TestCLI:
                 "--password",
                 "testpass",
                 "--ssl",
+                "--max-connections",
+                "500",
             ],
         )
 
@@ -109,6 +111,7 @@ class TestCLI:
         assert call_args["username"] == "testuser"
         assert call_args["password"] == "testpass"
         assert call_args["ssl"] is True
+        assert call_args["max_connections"] == 500
 
     @patch("src.main.set_redis_config_from_cli")
     @patch("src.main.RedisMCPServer")

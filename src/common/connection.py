@@ -54,12 +54,14 @@ class RedisConnectionManager:
                 if REDIS_CFG["cluster_mode"]:
                     redis_class: Type[Union[Redis, RedisCluster]] = RedisCluster
                     connection_params = base_params.copy()
-                    connection_params["max_connections_per_node"] = 10
+                    connection_params["max_connections_per_node"] = REDIS_CFG[
+                        "max_connections"
+                    ]
                 else:
                     redis_class: Type[Union[Redis, RedisCluster]] = redis.Redis
                     connection_params = base_params.copy()
                     connection_params["db"] = REDIS_CFG["db"]
-                    connection_params["max_connections"] = 10
+                    connection_params["max_connections"] = REDIS_CFG["max_connections"]
 
                 # Add credential provider if available
                 if credential_provider:

@@ -52,6 +52,7 @@ REDIS_CFG = {
     "ssl_ca_certs": os.getenv("REDIS_SSL_CA_CERTS", None),
     "cluster_mode": os.getenv("REDIS_CLUSTER_MODE", False) in ("true", "1", "t"),
     "db": get_env_int("REDIS_DB", 0),
+    "max_connections": get_env_int("REDIS_MAX_CONNECTIONS", 10),
 }
 
 # Entra ID Authentication Configuration
@@ -178,7 +179,7 @@ def parse_redis_uri(uri: str) -> dict:
 
 def set_redis_config_from_cli(config: dict):
     for key, value in config.items():
-        if key in ["port", "db"]:
+        if key in ["port", "db", "max_connections"]:
             # Check for empty/None before converting to int
             if value is None or str(value).strip() == "":
                 continue

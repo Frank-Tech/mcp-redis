@@ -155,7 +155,7 @@ class TestSetRedisConfigFromCLI:
 
     def test_set_integer_values(self):
         """Test setting integer configuration values."""
-        config = {"port": 6380, "db": 2}
+        config = {"port": 6380, "db": 2, "max_connections": 1000}
 
         set_redis_config_from_cli(config)
 
@@ -163,6 +163,8 @@ class TestSetRedisConfigFromCLI:
         assert isinstance(REDIS_CFG["port"], int)
         assert REDIS_CFG["db"] == 2
         assert isinstance(REDIS_CFG["db"], int)
+        assert REDIS_CFG["max_connections"] == 1000
+        assert isinstance(REDIS_CFG["max_connections"], int)
 
     def test_set_boolean_values(self):
         """Test setting boolean configuration values."""
@@ -193,6 +195,7 @@ class TestSetRedisConfigFromCLI:
             "ssl_ca_path": "/path/to/ca.pem",
             "cluster_mode": False,
             "username": None,
+            "max_connections": 500,
         }
 
         set_redis_config_from_cli(config)
@@ -203,10 +206,11 @@ class TestSetRedisConfigFromCLI:
         assert REDIS_CFG["ssl_ca_path"] == "/path/to/ca.pem"
         assert REDIS_CFG["cluster_mode"] is False
         assert REDIS_CFG["username"] is None
+        assert REDIS_CFG["max_connections"] == 500
 
     def test_convert_string_integers(self):
         """Test converting string integers to integers."""
-        config = {"port": "6380", "db": "1"}
+        config = {"port": "6380", "db": "1", "max_connections": "2000"}
 
         set_redis_config_from_cli(config)
 
@@ -214,6 +218,8 @@ class TestSetRedisConfigFromCLI:
         assert isinstance(REDIS_CFG["port"], int)
         assert REDIS_CFG["db"] == 1
         assert isinstance(REDIS_CFG["db"], int)
+        assert REDIS_CFG["max_connections"] == 2000
+        assert isinstance(REDIS_CFG["max_connections"], int)
 
     def test_convert_other_booleans_to_strings(self):
         """Test converting non-ssl/cluster_mode booleans to strings."""

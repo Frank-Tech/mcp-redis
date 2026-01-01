@@ -40,6 +40,7 @@ class TestRedisConnectionManager:
             "ssl_certfile": None,
             "ssl_cert_reqs": "required",
             "ssl_ca_certs": None,
+            "max_connections": 10,
         }[key]
 
         mock_redis_instance = Mock()
@@ -76,6 +77,7 @@ class TestRedisConnectionManager:
             "ssl_certfile": "/path/to/cert.pem",
             "ssl_cert_reqs": "required",
             "ssl_ca_certs": "/path/to/ca-bundle.pem",
+            "max_connections": 10,
         }[key]
 
         mock_cluster_instance = Mock()
@@ -116,6 +118,7 @@ class TestRedisConnectionManager:
             "ssl_certfile": None,
             "ssl_cert_reqs": "required",
             "ssl_ca_certs": None,
+            "max_connections": 10,
         }[key]
 
         mock_redis_instance = Mock()
@@ -150,6 +153,7 @@ class TestRedisConnectionManager:
             "ssl_certfile": None,
             "ssl_cert_reqs": "required",
             "ssl_ca_certs": None,
+            "max_connections": 10,
         }[key]
 
         mock_redis_instance = Mock()
@@ -178,6 +182,7 @@ class TestRedisConnectionManager:
             "ssl_certfile": "/path/to/cert.pem",
             "ssl_cert_reqs": "optional",
             "ssl_ca_certs": "/path/to/ca-bundle.pem",
+            "max_connections": 10,
         }[key]
 
         mock_redis_instance = Mock()
@@ -213,6 +218,7 @@ class TestRedisConnectionManager:
             "ssl_certfile": None,
             "ssl_cert_reqs": "required",
             "ssl_ca_certs": None,
+            "max_connections": 10,
         }[key]
 
         mock_redis_instance = Mock()
@@ -243,6 +249,7 @@ class TestRedisConnectionManager:
             "ssl_certfile": None,
             "ssl_cert_reqs": "required",
             "ssl_ca_certs": None,
+            "max_connections": 10,
         }[key]
 
         # Mock Redis constructor to raise ConnectionError
@@ -267,6 +274,7 @@ class TestRedisConnectionManager:
             "ssl_certfile": None,
             "ssl_cert_reqs": "required",
             "ssl_ca_certs": None,
+            "max_connections": 10,
         }[key]
 
         # Mock RedisCluster constructor to raise ConnectionError
@@ -307,6 +315,7 @@ class TestRedisConnectionManager:
             "ssl_certfile": None,
             "ssl_cert_reqs": "required",
             "ssl_ca_certs": None,
+            "max_connections": 10,
         }[key]
 
         mock_redis_instance = Mock()
