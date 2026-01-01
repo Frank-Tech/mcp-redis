@@ -7,7 +7,7 @@ from unittest.mock import Mock, patch, AsyncMock
 import pytest
 from redis.exceptions import ConnectionError, RedisError, TimeoutError
 
-from src.tools.string import get, set
+from src.tools.string import get, set, incr, decr, incrbyfloat, decrbyfloat
 
 
 class TestStringOperations:
@@ -204,3 +204,86 @@ class TestStringOperations:
         get_sig = inspect.signature(get)
         get_params = list(get_sig.parameters.keys())
         assert get_params == ["key"]
+
+    # --- NEW TESTS FOR INCR/DECR FIXES ---
+
+    @pytest.mark.asyncio
+    async def test_incr_success(self, mock_redis_connection_manager):
+        """Test successful incr operation returning raw string."""
+        mock_redis = mock_redis_connection_manager
+        mock_redis.incr = AsyncMock(return_value=11)
+
+        result = await incr("counter")
+
+        mock_redis.incr.assert_called_once_with("counter")
+        assert result == "11"
+
+    @pytest.mark.asyncio
+    async def test_incr_error(self, mock_redis_connection_manager):
+        """Test incr operation with Redis error."""
+        mock_redis = mock_redis_connection_manager
+        mock_redis.incr = AsyncMock(side_effect=RedisError("Not an integer"))
+
+        result = await incr("counter")
+        assert "Error incrementing key counter: Not an integer" in result
+
+    @pytest.mark.asyncio
+    async def test_decr_success(self, mock_redis_connection_manager):
+        """Test successful decr operation returning raw string."""
+        mock_redis = mock_redis_connection_manager
+        mock_redis.decr = AsyncMock(return_value=9)
+
+        result = await decr("counter")
+
+        mock_redis.decr.assert_called_once_with("counter")
+        assert result == "9"
+
+    @pytest.mark.asyncio
+    async def test_decr_error(self, mock_redis_connection_manager):
+        """Test decr operation with Redis error."""
+        mock_redis = mock_redis_connection_manager
+        mock_redis.decr = AsyncMock(side_effect=RedisError("Not an integer"))
+
+        result = await decr("counter")
+        assert "Error decrementing key counter: Not an integer" in result
+
+    @pytest.mark.asyncio
+    async def test_incrbyfloat_success(self, mock_redis_connection_manager):
+        """Test successful incrbyfloat operation returning raw string."""
+        mock_redis = mock_redis_connection_manager
+        mock_redis.incrbyfloat = AsyncMock(return_value=10.5)
+
+        result = await incrbyfloat("my_float", 0.5)
+
+        mock_redis.incrbyfloat.assert_called_once_with("my_float", 0.5)
+        assert result == "10.5"
+
+    @pytest.mark.asyncio
+    async def test_incrbyfloat_error(self, mock_redis_connection_manager):
+        """Test incrbyfloat operation with Redis error."""
+        mock_redis = mock_redis_connection_manager
+        mock_redis.incrbyfloat = AsyncMock(side_effect=RedisError("Not a float"))
+
+        result = await incrbyfloat("my_float", 0.5)
+        assert "Error incrementing key my_float by float: Not a float" in result
+
+    @pytest.mark.asyncio
+    async def test_decrbyfloat_success(self, mock_redis_connection_manager):
+        """Test successful decrbyfloat operation returning raw string."""
+        mock_redis = mock_redis_connection_manager
+        mock_redis.incrbyfloat = AsyncMock(return_value=9.5)
+
+        result = await decrbyfloat("my_float", 0.5)
+
+        # decrbyfloat calls incrbyfloat with negative amount
+        mock_redis.incrbyfloat.assert_called_once_with("my_float", -0.5)
+        assert result == "9.5"
+
+    @pytest.mark.asyncio
+    async def test_decrbyfloat_error(self, mock_redis_connection_manager):
+        """Test decrbyfloat operation with Redis error."""
+        mock_redis = mock_redis_connection_manager
+        mock_redis.incrbyfloat = AsyncMock(side_effect=RedisError("Not a float"))
+
+        result = await decrbyfloat("my_float", 0.5)
+        assert "Error decrementing key my_float by float: Not a float" in result

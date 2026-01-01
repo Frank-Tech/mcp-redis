@@ -89,7 +89,7 @@ async def incr(key: str) -> str:
     try:
         r = RedisConnectionManager.get_connection()
         new_value = await r.incr(key)
-        return f"Key {key} incremented to {new_value}"
+        return str(new_value)
     except RedisError as e:
         return f"Error incrementing key {key}: {str(e)}"
 
@@ -107,7 +107,7 @@ async def decr(key: str) -> str:
     try:
         r = RedisConnectionManager.get_connection()
         new_value = await r.decr(key)
-        return f"Key {key} decremented to {new_value}"
+        return str(new_value)
     except RedisError as e:
         return f"Error decrementing key {key}: {str(e)}"
 
@@ -126,7 +126,7 @@ async def incrbyfloat(key: str, amount: float) -> str:
     try:
         r = RedisConnectionManager.get_connection()
         new_value = await r.incrbyfloat(key, amount)
-        return f"Key {key} incremented by {amount}, new value: {new_value}"
+        return str(new_value)
     except RedisError as e:
         return f"Error incrementing key {key} by float: {str(e)}"
 
@@ -145,6 +145,6 @@ async def decrbyfloat(key: str, amount: float) -> str:
     try:
         r = RedisConnectionManager.get_connection()
         new_value = await r.incrbyfloat(key, -amount)
-        return f"Key {key} decremented by {amount}, new value: {new_value}"
+        return str(new_value)
     except RedisError as e:
         return f"Error decrementing key {key} by float: {str(e)}"
