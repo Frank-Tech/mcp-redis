@@ -22,7 +22,7 @@ class TestSortedSetOperations:
         result = await zadd("test_zset", 1.5, "member1")
 
         mock_redis.zadd.assert_called_once_with("test_zset", {"member1": 1.5})
-        assert result == "1"
+        assert "Successfully added member1 to test_zset with score 1.5" in result
 
     @pytest.mark.asyncio
     async def test_zadd_with_expiration(self, mock_redis_connection_manager):
@@ -35,7 +35,7 @@ class TestSortedSetOperations:
 
         mock_redis.zadd.assert_called_once_with("test_zset", {"member1": 2.0})
         mock_redis.expire.assert_called_once_with("test_zset", 60)
-        assert result == "1"
+        assert "and expiration 60 seconds" in result
 
     @pytest.mark.asyncio
     async def test_zadd_member_updated(self, mock_redis_connection_manager):
@@ -47,7 +47,9 @@ class TestSortedSetOperations:
 
         result = await zadd("test_zset", 3.0, "existing_member")
 
-        assert result == "0"
+        assert (
+            "Successfully added existing_member to test_zset with score 3.0" in result
+        )
 
     @pytest.mark.asyncio
     async def test_zadd_redis_error(self, mock_redis_connection_manager):
@@ -68,7 +70,7 @@ class TestSortedSetOperations:
         result = await zadd("test_zset", 5, "member1")
 
         mock_redis.zadd.assert_called_once_with("test_zset", {"member1": 5})
-        assert result == "1"
+        assert "Successfully added member1 to test_zset with score 5" in result
 
     @pytest.mark.asyncio
     async def test_zrange_success_without_scores(self, mock_redis_connection_manager):
@@ -118,7 +120,7 @@ class TestSortedSetOperations:
         result = await zrange("empty_zset", 0, -1)
 
         mock_redis.zrange.assert_called_once_with("empty_zset", 0, -1, withscores=False)
-        assert result == "[]"
+        assert "Sorted set empty_zset is empty or does not exist" in result
 
     @pytest.mark.asyncio
     async def test_zrange_redis_error(self, mock_redis_connection_manager):
@@ -139,7 +141,7 @@ class TestSortedSetOperations:
         result = await zrem("test_zset", "member1")
 
         mock_redis.zrem.assert_called_once_with("test_zset", "member1")
-        assert result == "1"
+        assert "Successfully removed member1 from test_zset" in result
 
     @pytest.mark.asyncio
     async def test_zrem_member_not_exists(self, mock_redis_connection_manager):
@@ -149,7 +151,7 @@ class TestSortedSetOperations:
 
         result = await zrem("test_zset", "nonexistent_member")
 
-        assert result == "0"
+        assert "Member nonexistent_member not found in test_zset" in result
 
     @pytest.mark.asyncio
     async def test_zrem_redis_error(self, mock_redis_connection_manager):
@@ -170,7 +172,9 @@ class TestSortedSetOperations:
         result = await zadd("test_zset", -1.5, "negative_member")
 
         mock_redis.zadd.assert_called_once_with("test_zset", {"negative_member": -1.5})
-        assert result == "1"
+        assert (
+            "Successfully added negative_member to test_zset with score -1.5" in result
+        )
 
     @pytest.mark.asyncio
     async def test_zadd_zero_score(self, mock_redis_connection_manager):
@@ -181,7 +185,7 @@ class TestSortedSetOperations:
         result = await zadd("test_zset", 0, "zero_member")
 
         mock_redis.zadd.assert_called_once_with("test_zset", {"zero_member": 0})
-        assert result == "1"
+        assert "Successfully added zero_member to test_zset with score 0" in result
 
     @pytest.mark.asyncio
     async def test_zrange_negative_indices(self, mock_redis_connection_manager):
@@ -215,7 +219,9 @@ class TestSortedSetOperations:
         result = await zadd("test_zset", 1.0, unicode_member)
 
         mock_redis.zadd.assert_called_once_with("test_zset", {unicode_member: 1.0})
-        assert result == "1"
+        assert (
+            f"Successfully added {unicode_member} to test_zset with score 1.0" in result
+        )
 
     @pytest.mark.asyncio
     async def test_zrange_large_range(self, mock_redis_connection_manager):
