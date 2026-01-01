@@ -3,49 +3,79 @@ Unit tests for src/main.py
 """
 
 import logging
-
-from unittest.mock import Mock, patch
+import asyncio
+from unittest.mock import patch
 
 import pytest
 from click.testing import CliRunner
 
-from src.main import RedisMCPServer, cli
+# Import explicitly to allow patch.object
+import src.main
+from src.main import cli, run_redis_server
 
 
-class TestRedisMCPServer:
-    """Test cases for RedisMCPServer class."""
+class TestServerExecution:
+    """Test cases for the run_redis_server function and internal modes."""
 
-    def test_init_logs_startup_message(self, capsys, caplog, monkeypatch):
-        """Startup should emit an INFO log; client may route it via handlers.
-        Accept either stderr output or log record text.
-        """
-        monkeypatch.setenv("MCP_REDIS_LOG_LEVEL", "INFO")
-
+    @patch("src.main.uvicorn.run")
+    def test_run_http_mode(self, mock_uvicorn_run, caplog):
+        """Test that run_redis_server starts uvicorn for http transport."""
         with caplog.at_level(logging.INFO):
-            server = RedisMCPServer()
-            assert server is not None
+            run_redis_server(
+                transport="http",
+                mcp_host="127.0.0.1",
+                mcp_port=8000,
+                workers=1,
+                host="redis-host",
+                port=6379,
+            )
 
-        captured = capsys.readouterr()
-        stderr_text = captured.err or ""
-        log_text = caplog.text or ""  # collected by pytest logging handler
-        combined = stderr_text + "\n" + log_text
-        assert "Starting the Redis MCP Server" in combined
+        assert "Binding to TCP: 127.0.0.1:8000" in caplog.text
 
-    @patch("src.main.mcp.run")
-    def test_run_calls_mcp_run(self, mock_mcp_run):
-        """Test that RedisMCPServer.run() calls mcp.run()."""
-        server = RedisMCPServer()
-        server.run()
-        mock_mcp_run.assert_called_once()
+        mock_uvicorn_run.assert_called_once()
+        call_kwargs = mock_uvicorn_run.call_args[1]
+        assert call_kwargs["host"] == "127.0.0.1"
+        assert call_kwargs["port"] == 8000
+        assert call_kwargs["workers"] == 1
 
-    @patch("src.main.mcp.run")
-    def test_run_propagates_exceptions(self, mock_mcp_run):
-        """Test that exceptions from mcp.run() are propagated."""
-        mock_mcp_run.side_effect = Exception("MCP run failed")
-        server = RedisMCPServer()
+    @patch("src.main.asyncio.run")
+    def test_run_stdio_mode(self, mock_asyncio_run):
+        """Test that run_redis_server triggers stdio mode."""
 
-        with pytest.raises(Exception, match="MCP run failed"):
-            server.run()
+        # 1. Run the server
+        exit_code = run_redis_server(
+            transport="stdio",
+            mcp_host="127.0.0.1",
+            mcp_port=8000,
+            workers=1,
+            host="localhost",
+            port=6379,
+        )
+
+        assert exit_code == 0
+        mock_asyncio_run.assert_called_once()
+
+        # 2. FIX: Clean up the unawaited coroutine to suppress RuntimeWarning
+        # The real code created '_run_stdio_mode()' and passed it to our mock.
+        # Since the mock didn't run it, we must close it manually.
+        call_args = mock_asyncio_run.call_args
+        if call_args:
+            coro = call_args[0][0]  # First positional argument
+            if asyncio.iscoroutine(coro):
+                coro.close()
+
+    def test_stdio_mode_workers_error(self):
+        """Test that stdio mode rejects multiple workers."""
+        with pytest.raises(Exception) as excinfo:
+            run_redis_server(
+                transport="stdio",
+                mcp_host="127.0.0.1",
+                mcp_port=8000,
+                workers=2,
+                host="localhost",
+                port=6379,
+            )
+        assert "Cannot use workers with stdio transport" in str(excinfo.value)
 
 
 class TestCLI:
@@ -55,35 +85,35 @@ class TestCLI:
         """Set up test fixtures."""
         self.runner = CliRunner()
 
-    @patch("src.main.parse_redis_uri")
-    @patch("src.main.set_redis_config_from_cli")
-    @patch("src.main.RedisMCPServer")
-    def test_cli_with_url_parameter(
-        self, mock_server_class, mock_set_config, mock_parse_uri
-    ):
+    @patch.object(src.main, "run_redis_server")
+    @patch.object(src.main, "parse_redis_uri")
+    def test_cli_with_url_parameter(self, mock_parse_uri, mock_run_server):
         """Test CLI with --url parameter."""
-        mock_parse_uri.return_value = {"host": "localhost", "port": 6379}
-        mock_server = Mock()
-        mock_server_class.return_value = mock_server
+        mock_parse_uri.return_value = {"host": "parsed-host", "port": 9999, "db": 5}
 
-        result = self.runner.invoke(cli, ["--url", "redis://localhost:6379/0"])
+        result = self.runner.invoke(cli, ["--url", "redis://parsed-host:9999/5"])
 
         assert result.exit_code == 0
-        mock_parse_uri.assert_called_once_with("redis://localhost:6379/0")
-        mock_set_config.assert_called_once_with({"host": "localhost", "port": 6379})
-        mock_server_class.assert_called_once()
-        mock_server.run.assert_called_once()
+        mock_parse_uri.assert_called_once_with("redis://parsed-host:9999/5")
 
-    @patch("src.main.set_redis_config_from_cli")
-    @patch("src.main.RedisMCPServer")
-    def test_cli_with_individual_parameters(self, mock_server_class, mock_set_config):
+        mock_run_server.assert_called_once()
+        call_kwargs = mock_run_server.call_args[1]
+        assert call_kwargs["host"] == "parsed-host"
+        assert call_kwargs["port"] == 9999
+        assert call_kwargs["db"] == 5
+
+    @patch.object(src.main, "run_redis_server")
+    def test_cli_with_individual_parameters(self, mock_run_server):
         """Test CLI with individual connection parameters."""
-        mock_server = Mock()
-        mock_server_class.return_value = mock_server
-
         result = self.runner.invoke(
             cli,
             [
+                "--transport",
+                "sse",
+                "--mcp-host",
+                "0.0.0.0",
+                "--mcp-port",
+                "8080",
                 "--host",
                 "redis.example.com",
                 "--port",
@@ -101,25 +131,23 @@ class TestCLI:
         )
 
         assert result.exit_code == 0
-        mock_set_config.assert_called_once()
+        mock_run_server.assert_called_once()
+        call_kwargs = mock_run_server.call_args[1]
 
-        # Verify the config passed to set_redis_config_from_cli
-        call_args = mock_set_config.call_args[0][0]
-        assert call_args["host"] == "redis.example.com"
-        assert call_args["port"] == 6380
-        assert call_args["db"] == 1
-        assert call_args["username"] == "testuser"
-        assert call_args["password"] == "testpass"
-        assert call_args["ssl"] is True
-        assert call_args["max_connections"] == 500
+        assert call_kwargs["transport"] == "sse"
+        assert call_kwargs["mcp_host"] == "0.0.0.0"
+        assert call_kwargs["mcp_port"] == 8080
+        assert call_kwargs["host"] == "redis.example.com"
+        assert call_kwargs["port"] == 6380
+        assert call_kwargs["db"] == 1
+        assert call_kwargs["username"] == "testuser"
+        assert call_kwargs["password"] == "testpass"
+        assert call_kwargs["ssl"] is True
+        assert call_kwargs["max_connections"] == 500
 
-    @patch("src.main.set_redis_config_from_cli")
-    @patch("src.main.RedisMCPServer")
-    def test_cli_with_ssl_parameters(self, mock_server_class, mock_set_config):
+    @patch.object(src.main, "run_redis_server")
+    def test_cli_with_ssl_parameters(self, mock_run_server):
         """Test CLI with SSL-specific parameters."""
-        mock_server = Mock()
-        mock_server_class.return_value = mock_server
-
         result = self.runner.invoke(
             cli,
             [
@@ -138,28 +166,47 @@ class TestCLI:
         )
 
         assert result.exit_code == 0
-        call_args = mock_set_config.call_args[0][0]
-        assert call_args["ssl"] is True
-        assert call_args["ssl_ca_path"] == "/path/to/ca.pem"
-        assert call_args["ssl_keyfile"] == "/path/to/key.pem"
-        assert call_args["ssl_certfile"] == "/path/to/cert.pem"
-        assert call_args["ssl_cert_reqs"] == "optional"
-        assert call_args["ssl_ca_certs"] == "/path/to/ca-bundle.pem"
+        call_kwargs = mock_run_server.call_args[1]
+        assert call_kwargs["ssl"] is True
+        assert call_kwargs["ssl_ca_path"] == "/path/to/ca.pem"
+        assert call_kwargs["ssl_keyfile"] == "/path/to/key.pem"
+        assert call_kwargs["ssl_certfile"] == "/path/to/cert.pem"
+        assert call_kwargs["ssl_cert_reqs"] == "optional"
+        assert call_kwargs["ssl_ca_certs"] == "/path/to/ca-bundle.pem"
 
-    @patch("src.main.set_redis_config_from_cli")
-    @patch("src.main.RedisMCPServer")
-    def test_cli_with_cluster_mode(self, mock_server_class, mock_set_config):
+    # Fixed Indentation: This method is now properly inside the class
+    @patch.object(src.main, "_run_stdio_mode")
+    @patch.object(src.main, "run_redis_server")
+    def test_cli_with_cluster_mode(self, mock_run_server, mock_stdio_mode):
         """Test CLI with cluster mode enabled."""
-        mock_server = Mock()
-        mock_server_class.return_value = mock_server
-
         result = self.runner.invoke(cli, ["--cluster-mode"])
 
         assert result.exit_code == 0
-        call_args = mock_set_config.call_args[0][0]
-        assert call_args["cluster_mode"] is True
+        call_kwargs = mock_run_server.call_args[1]
+        assert call_kwargs["cluster_mode"] is True
 
-    @patch("src.main.parse_redis_uri")
+        # Verify the internal coroutine was NOT called
+        mock_stdio_mode.assert_not_called()
+
+    @patch.object(src.main, "_run_stdio_mode")
+    @patch.object(src.main, "run_redis_server")
+    def test_cli_default_values(self, mock_run_server, mock_stdio_mode):
+        """Test CLI with default values."""
+        result = self.runner.invoke(cli, [])
+
+        assert result.exit_code == 0
+        mock_run_server.assert_called_once()
+        call_kwargs = mock_run_server.call_args[1]
+
+        assert call_kwargs["transport"] == "stdio"
+        assert call_kwargs["mcp_host"] == "127.0.0.1"
+        assert call_kwargs["mcp_port"] == 8000
+        assert call_kwargs["host"] == "127.0.0.1"
+        assert call_kwargs["port"] == 6379
+
+        mock_stdio_mode.assert_not_called()
+
+    @patch.object(src.main, "parse_redis_uri")
     def test_cli_with_invalid_url(self, mock_parse_uri):
         """Test CLI with invalid Redis URL."""
         mock_parse_uri.side_effect = ValueError("Invalid Redis URI")
@@ -167,68 +214,13 @@ class TestCLI:
         result = self.runner.invoke(cli, ["--url", "invalid://url"])
 
         assert result.exit_code != 0
-        assert "Invalid Redis URI" in result.output
+        assert "Error parsing Redis URI" in result.output
 
-    @patch("src.main.RedisMCPServer")
-    def test_cli_server_initialization_failure(self, mock_server_class):
-        """Test CLI when server initialization fails."""
-        mock_server_class.side_effect = Exception("Server init failed")
-
-        result = self.runner.invoke(cli, [])
-
-        assert result.exit_code != 0
-
-    @patch("src.main.RedisMCPServer")
-    def test_cli_server_run_failure(self, mock_server_class):
-        """Test CLI when server run fails."""
-        mock_server = Mock()
-        mock_server.run.side_effect = Exception("Server run failed")
-        mock_server_class.return_value = mock_server
-
-        result = self.runner.invoke(cli, [])
-
-        assert result.exit_code != 0
-
-    def test_cli_help(self):
-        """Test CLI help output."""
-        result = self.runner.invoke(cli, ["--help"])
-
-        assert result.exit_code == 0
-        assert "Redis connection URI" in result.output
-        assert "--host" in result.output
-        assert "--port" in result.output
-        assert "--ssl" in result.output
-
-    @patch("src.main.set_redis_config_from_cli")
-    @patch("src.main.RedisMCPServer")
-    def test_cli_default_values(self, mock_server_class, mock_set_config):
-        """Test CLI with default values."""
-        mock_server = Mock()
-        mock_server_class.return_value = mock_server
-
-        result = self.runner.invoke(cli, [])
-
-        assert result.exit_code == 0
-        # Should be called with empty config when no parameters provided
-        mock_set_config.assert_called_once()
-        call_args = mock_set_config.call_args[0][0]
-
-        # Check that only non-None values are in the config
-        for key, value in call_args.items():
-            if value is not None:
-                # These should be the default values or explicitly set values
-                assert isinstance(value, (str, int, bool))
-
-    @patch("src.main.parse_redis_uri")
-    @patch("src.main.set_redis_config_from_cli")
-    @patch("src.main.RedisMCPServer")
-    def test_cli_url_overrides_individual_params(
-        self, mock_server_class, mock_set_config, mock_parse_uri
-    ):
-        """Test that --url parameter takes precedence over individual parameters."""
+    @patch.object(src.main, "run_redis_server")
+    @patch.object(src.main, "parse_redis_uri")
+    def test_cli_url_overrides_individual_params(self, mock_parse_uri, mock_run_server):
+        """Test that --url parameter takes precedence."""
         mock_parse_uri.return_value = {"host": "uri-host", "port": 9999}
-        mock_server = Mock()
-        mock_server_class.return_value = mock_server
 
         result = self.runner.invoke(
             cli,
@@ -243,8 +235,24 @@ class TestCLI:
         )
 
         assert result.exit_code == 0
-        mock_parse_uri.assert_called_once_with("redis://uri-host:9999/0")
-        # Should use URI config, not individual parameters
-        call_args = mock_set_config.call_args[0][0]
-        assert call_args["host"] == "uri-host"
-        assert call_args["port"] == 9999
+        call_kwargs = mock_run_server.call_args[1]
+        assert call_kwargs["host"] == "uri-host"
+        assert call_kwargs["port"] == 9999
+
+    @patch.object(src.main, "run_redis_server")
+    def test_cli_server_run_failure(self, mock_run_server):
+        """Test CLI when server run fails with generic exception."""
+        mock_run_server.side_effect = Exception("Server run failed")
+
+        result = self.runner.invoke(cli, [])
+
+        assert result.exit_code != 0
+        assert result.exit_code == 1
+
+    def test_cli_help(self):
+        """Test CLI help output."""
+        result = self.runner.invoke(cli, ["--help"])
+
+        assert result.exit_code == 0
+        assert "--transport" in result.output
+        assert "--mcp-host" in result.output

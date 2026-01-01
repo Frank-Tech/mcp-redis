@@ -2,6 +2,8 @@
 Pytest configuration and fixtures for Redis MCP Server tests.
 """
 
+import tests.fastmcp_patch  # noqa
+
 from unittest.mock import AsyncMock, patch
 
 import pytest

@@ -1,6 +1,7 @@
 import importlib
 import pkgutil
-from mcp.server.fastmcp import FastMCP
+
+from fastmcp import FastMCP
 
 
 def load_tools():
@@ -11,7 +12,7 @@ def load_tools():
 
 
 # Initialize FastMCP server
-mcp = FastMCP("Redis MCP Server", dependencies=["redis", "dotenv", "numpy", "aiohttp"])
+mcp = FastMCP("Redis MCP Server")
 
 # Load tools
 load_tools()

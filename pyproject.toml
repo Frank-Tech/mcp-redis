@@ -22,7 +22,7 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 dependencies = [
-    "mcp[cli]>=1.9.4",
+    "fastmcp~=2.13.3",
     "redis>=6.0.0",
     "dotenv>=0.9.9",
     "numpy>=2.2.4",
