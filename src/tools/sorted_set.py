@@ -92,6 +92,6 @@ async def zcard(key: str) -> str:
     try:
         r = RedisConnectionManager.get_connection()
         count = await r.zcard(key)
-        return str(count)
+        return count
     except RedisError as e:
         return f"Error retrieving cardinality of sorted set {key}: {str(e)}"

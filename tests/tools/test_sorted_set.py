@@ -246,7 +246,7 @@ class TestSortedSetOperations:
         result = await zcard("test_zset")
 
         mock_redis.zcard.assert_called_once_with("test_zset")
-        assert result == "5"
+        assert result == 5
 
     @pytest.mark.asyncio
     async def test_zcard_empty_set(self, mock_redis_connection_manager):
@@ -257,7 +257,7 @@ class TestSortedSetOperations:
         result = await zcard("empty_zset")
 
         mock_redis.zcard.assert_called_once_with("empty_zset")
-        assert result == "0"
+        assert result == 0
 
     @pytest.mark.asyncio
     async def test_zcard_redis_error(self, mock_redis_connection_manager):
