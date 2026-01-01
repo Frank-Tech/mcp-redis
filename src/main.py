@@ -1,4 +1,5 @@
 import logging
+import os
 import sys
 
 import click
@@ -96,6 +97,12 @@ class RedisMCPServer:
     type=int,
     help="Maximum number of Redis connections (defaults to env var or 1000)",
 )
+@click.option(
+    "--workers",
+    default=1,
+    type=int,
+    help="Number of worker processes (requires transport='sse' or 'http')",
+)
 # Entra ID Authentication Options
 @click.option(
     "--entraid-auth-flow",
@@ -162,6 +169,7 @@ def cli(
     ssl_ca_certs,
     cluster_mode,
     max_connections,
+    workers,
     entraid_auth_flow,
     entraid_client_id,
     entraid_client_secret,
@@ -185,6 +193,57 @@ def cli(
             raise click.BadParameter(
                 "Host and port should not be set when using 'stdio' transport."
             )
+
+    # If workers > 1, we must launch Uvicorn via string path
+    if workers > 1:
+        if transport == "stdio":
+            raise click.BadParameter("Cannot use workers with stdio transport")
+
+        # 1. Propagate CLI args to Environment Variables
+        # Workers are new processes; they read config from os.environ, not this function's scope.
+        if host:
+            os.environ["REDIS_HOST"] = host
+        if port:
+            os.environ["REDIS_PORT"] = str(port)
+        if password:
+            os.environ["REDIS_PWD"] = password
+        if max_connections:
+            os.environ["REDIS_MAX_CONNECTIONS"] = str(max_connections)
+        if redis_unix_socket_path:
+            os.environ["REDIS_UNIX_SOCKET_PATH"] = redis_unix_socket_path
+        if db:
+            os.environ["REDIS_DB"] = str(db)
+        if username:
+            os.environ["REDIS_USERNAME"] = username
+        if ssl:
+            os.environ["REDIS_SSL"] = "true"
+        if cluster_mode:
+            os.environ["REDIS_CLUSTER_MODE"] = "true"
+        if transport:
+            os.environ["TRANSPORT"] = transport
+
+        # 2. Determine which app string to load based on transport
+        if transport == "sse":
+            app_import_string = "src.asgi.sse:app"
+        else:  # http
+            app_import_string = "src.asgi.http:app"
+
+        # 3. Configure Uvicorn Arguments
+        run_kwargs = {
+            "workers": workers,
+            "log_level": "info",
+            "factory": False,
+        }
+
+        if uds:
+            run_kwargs["uds"] = uds
+        else:
+            run_kwargs["host"] = mcp_host
+            run_kwargs["port"] = mcp_port
+
+        # 4. Launch!
+        uvicorn.run(app_import_string, **run_kwargs)
+        return
 
     # Handle Redis URI if provided (and not empty)
     if url and url.strip() and url.strip() != "${REDIS_URL}":
