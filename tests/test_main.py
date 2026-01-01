@@ -170,7 +170,6 @@ class TestCLI:
         assert call_kwargs["ssl_cert_reqs"] == "optional"
         assert call_kwargs["ssl_ca_certs"] == "/path/to/ca-bundle.pem"
 
-
     @patch.object(src.main, "_run_stdio_mode")
     @patch.object(src.main, "run_redis_server")
     def test_cli_with_cluster_mode(self, mock_run_server, mock_stdio_mode):
