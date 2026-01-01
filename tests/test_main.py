@@ -9,7 +9,6 @@ from unittest.mock import patch
 import pytest
 from click.testing import CliRunner
 
-# Import explicitly to allow patch.object
 import src.main
 from src.main import cli, run_redis_server
 
@@ -55,9 +54,6 @@ class TestServerExecution:
         assert exit_code == 0
         mock_asyncio_run.assert_called_once()
 
-        # 2. FIX: Clean up the unawaited coroutine to suppress RuntimeWarning
-        # The real code created '_run_stdio_mode()' and passed it to our mock.
-        # Since the mock didn't run it, we must close it manually.
         call_args = mock_asyncio_run.call_args
         if call_args:
             coro = call_args[0][0]  # First positional argument
@@ -174,7 +170,7 @@ class TestCLI:
         assert call_kwargs["ssl_cert_reqs"] == "optional"
         assert call_kwargs["ssl_ca_certs"] == "/path/to/ca-bundle.pem"
 
-    # Fixed Indentation: This method is now properly inside the class
+
     @patch.object(src.main, "_run_stdio_mode")
     @patch.object(src.main, "run_redis_server")
     def test_cli_with_cluster_mode(self, mock_run_server, mock_stdio_mode):
