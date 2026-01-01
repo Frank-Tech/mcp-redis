@@ -4,6 +4,45 @@ import src.tools.misc as misc
 
 
 @pytest.mark.asyncio
+async def test_execute_command_success_decoding(monkeypatch):
+    """
+    Ensure execute_command runs successfully and recursively decodes
+    bytes to strings (including nested lists).
+    """
+
+    class DummyRedis:
+        async def execute_command(self, command, *args):
+            return [b"result1", 42, [b"nested_key", b"nested_val"]]
+
+    monkeypatch.setattr(
+        misc.RedisConnectionManager, "get_connection", lambda: DummyRedis()
+    )
+
+    result = await misc.execute_command("SOME.CMD", ["arg1"])
+
+    assert result == ["result1", 42, ["nested_key", "nested_val"]]
+
+
+@pytest.mark.asyncio
+async def test_execute_command_redis_error(monkeypatch):
+    """Ensure execute_command catches RedisError and returns a formatted error string."""
+
+    class DummyRedis:
+        async def execute_command(self, command, *args):
+            raise misc.RedisError("Invalid syntax")
+
+    monkeypatch.setattr(
+        misc.RedisConnectionManager, "get_connection", lambda: DummyRedis()
+    )
+
+    result = await misc.execute_command("BAD.CMD")
+
+    assert isinstance(result, str)
+    assert result.startswith("Error executing command 'BAD.CMD'")
+    assert "Invalid syntax" in result
+
+
+@pytest.mark.asyncio
 async def test_search_redis_documents_url_not_configured(monkeypatch):
     """Return a clear error if MCP_DOCS_SEARCH_URL is not set for search_redis_documents."""
     monkeypatch.setattr(misc, "MCP_DOCS_SEARCH_URL", "")

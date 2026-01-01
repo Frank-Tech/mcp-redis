@@ -1,12 +1,47 @@
-from typing import Any, Dict, Union, List
-import aiohttp
+from typing import Any, Dict, Union, List, Optional
 
+import aiohttp
 from redis.exceptions import RedisError
 
+from src.common.config import MCP_DOCS_SEARCH_URL
 from src.common.connection import RedisConnectionManager
 from src.common.server import mcp
-from src.common.config import MCP_DOCS_SEARCH_URL
 from src.version import __version__
+
+
+def _decode_response(response: Any) -> Any:
+    """Recursively decode bytes in Redis responses to strings."""
+    if isinstance(response, bytes):
+        return response.decode("utf-8")
+    if isinstance(response, list):
+        return [_decode_response(item) for item in response]
+    if isinstance(response, dict):
+        return {k: _decode_response(v) for k, v in response.items()}
+    return response
+
+
+@mcp.tool()
+async def execute_command(command: str, args: Optional[List[str]] = None) -> Any:
+    """
+    Execute any arbitrary Redis command directly.
+
+    Useful for running native commands that do not have a dedicated tool,
+    allowing for non-blocking operations without Lua scripts.
+
+    Args:
+        command: The Redis command to run .
+        args: A list of arguments for the command.
+
+    Returns:
+        The raw result of the Redis command, automatically decoded to strings.
+    """
+    try:
+        args = args or []
+        r = RedisConnectionManager.get_connection()
+        result = await r.execute_command(command, *args)
+        return _decode_response(result)
+    except RedisError as e:
+        return f"Error executing command '{command}': {str(e)}"
 
 
 @mcp.tool()

@@ -216,6 +216,7 @@ class TestMCPServerIntegration:
             "rpop",
             "lrange",
             "llen",
+            "execute_command",
             "delete",
             "type",
             "expire",
@@ -294,7 +295,7 @@ class TestMCPServerIntegration:
 
         # Expected tool count (based on @mcp.tool() decorators in codebase)
         # Updated to include new JSON tools
-        expected_tool_count = 69
+        expected_tool_count = 70
         assert len(tools) == expected_tool_count, (
             f"Expected {expected_tool_count} tools, but got {len(tools)}"
         )
@@ -306,6 +307,7 @@ class TestMCPServerIntegration:
             "dbsize",
             "decr",
             "decrbyfloat",
+            "execute_command",
             "delete",
             "eval_script",
             "evalsha_script",
@@ -413,6 +415,7 @@ class TestMCPServerIntegration:
             "pub_sub": ["publish", "subscribe", "unsubscribe"],
             "server_mgmt": ["dbsize", "info", "client_list"],
             "misc": [
+                "execute_command",
                 "delete",
                 "expire",
                 "rename",
