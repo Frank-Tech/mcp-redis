@@ -80,7 +80,7 @@ async def zrem(key: str, member: str) -> str:
 
 
 @mcp.tool()
-async def zcard(key: str) -> str:
+async def zcard(key: str) -> int:
     """Retrieve the cardinality of a Redis sorted set.
 
     Args:
