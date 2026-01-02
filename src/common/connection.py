@@ -67,8 +67,6 @@ class RedisConnectionManager:
                 if credential_provider:
                     connection_params["credential_provider"] = credential_provider
 
-                # CRITICAL FIX for AsyncIO:
-                # The async client crashes if you pass None for keys it doesn't recognize (like ssl_ca_path).
                 # We must filter out None values so we only pass arguments that are actually set.
                 filtered_params = {
                     k: v for k, v in connection_params.items() if v is not None
