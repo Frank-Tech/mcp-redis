@@ -300,8 +300,7 @@ def run_redis_server(
 
     # --- 3. Run Uvicorn (HTTP/SSE) ---
     config_kwargs = {
-        "log_level": "info",
-        "ws": "none",
+        "ws": "wsproto",
         "loop": "auto",
         "http": "auto",
         "timeout_keep_alive": 30,
